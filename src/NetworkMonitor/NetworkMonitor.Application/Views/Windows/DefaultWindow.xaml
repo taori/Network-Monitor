@@ -1,0 +1,33 @@
+<mah:MetroWindow x:Class="NetworkMonitor.Application.Views.Windows.DefaultWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModel="clr-namespace:NetworkMonitor.Framework.Mvvm.ViewModel;assembly=NetworkMonitor.Framework.Mvvm"
+        xmlns:viewMapping="clr-namespace:NetworkMonitor.Framework.Mvvm.Integration.ViewMapping;assembly=NetworkMonitor.Framework.Mvvm"
+        xmlns:common="clr-namespace:NetworkMonitor.ViewModels.Common;assembly=NetworkMonitor.ViewModels"
+        xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
+        xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        mc:Ignorable="d"
+		x:Name="Self"
+        d:DataContext="{d:DesignInstance viewModel:WindowViewModelBase}"
+        Title="{Binding Path=Title}" 
+		ResizeMode="{Binding Path=ResizeMode}"
+        Style="{StaticResource DefaultWindowStyle}"
+		ShowInTaskbar="{Binding Path=ShowInTaskbar}" SizeToContent="{Binding Path=SizeToContent}"
+		Top="{Binding Path=Top}" Left="{Binding Path=Left}"
+		MinWidth="{Binding Path=MinWidth}" MinHeight="{Binding Path=MinHeight}"
+		MaxWidth="{Binding Path=MaxWidth}" MaxHeight="{Binding Path=MaxHeight}"
+        Height="{Binding Path=Height}" 
+        Width="{Binding Path=Width}">
+	<Grid>
+		<framework:OverlayPanel IsOverlayVisible="{Binding Path=LoadingState.IsBusy}">
+			<framework:OverlayPanel.Overlay>
+				<TextBlock Text="Loading ..." Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="30"></TextBlock>
+			</framework:OverlayPanel.Overlay>
+		</framework:OverlayPanel>
+		<ContentPresenter Content="{Binding Path=Content, UpdateSourceTrigger=PropertyChanged}" 
+		                  viewMapping:RegionManager.ViewModel="{Binding ElementName=Self, Path=DataContext}" 
+		                  viewMapping:RegionManager.RegionName="{x:Static common:RegionNames.TopArea}" />
+	</Grid>
+</mah:MetroWindow>

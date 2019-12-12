@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472</TargetFrameworks>
+    <Platforms>AnyCPU;x64;x86</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
+    <PackageReference Include="NLog" Version="4.5.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetworkMonitor.Framework.Mvvm\NetworkMonitor.Framework.Mvvm.csproj" />
+    <ProjectReference Include="..\NetworkMonitor.Framework\NetworkMonitor.Framework.csproj" />
+    <ProjectReference Include="..\NetworkMonitor.Models.Abstraction\NetworkMonitor.Models.Abstraction.csproj" />
+    <ProjectReference Include="..\NetworkMonitor.Models\NetworkMonitor.Models.csproj" />
+    <ProjectReference Include="..\NetworkMonitor.Shared\NetworkMonitor.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
