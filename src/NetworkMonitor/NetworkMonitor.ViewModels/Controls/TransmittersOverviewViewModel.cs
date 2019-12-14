@@ -11,12 +11,6 @@ using NetworkMonitor.ViewModels.Windows;
 
 namespace NetworkMonitor.ViewModels.Controls
 {
-	public enum TransmitterType
-	{
-		Tcp,
-		Udp,
-	}
-
 	public class TransmittersOverviewViewModel : TabViewModel
 	{
 		private readonly MainViewModel _mainView;
