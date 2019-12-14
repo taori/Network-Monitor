@@ -17,7 +17,7 @@
 			<RowDefinition Height="*" />
 		</Grid.RowDefinitions>
 		<mah:MetroTabControl x:Name="Tab"
-		                     dependencies:TabManager.ViewModel="{Binding Path=.}">
+		                     dependencies:TabManager.ViewModel="{Binding Path=., UpdateSourceTrigger=PropertyChanged}">
 			<mah:MetroTabItem Header="Receivers">
 				<mah:MetroTabItem.Content>
 					<mah:MetroContentControl Content="{Binding Path=Receivers}" />

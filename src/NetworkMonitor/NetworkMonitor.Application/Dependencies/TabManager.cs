@@ -10,10 +10,17 @@ namespace NetworkMonitor.Application.Dependencies
 {
 	public class TabManager : ITabControllerManager
 	{
+		private static IServiceProvider _serviceProvider;
+
+		public TabManager(IServiceProvider serviceProvider)
+		{
+			_serviceProvider = serviceProvider;
+		}
+
 		private static readonly ILogger Log = LogManager.GetLogger(nameof(TabManager));
 
 		public static readonly DependencyProperty ViewModelProperty = DependencyProperty.RegisterAttached(
-			"ViewModel", typeof(ITabController), typeof(TabManager), new PropertyMetadata(default(ITabController), ControllerChanged));
+			"ViewModel", typeof(object), typeof(TabManager), new PropertyMetadata(default(object), ControllerChanged));
 
 		public static void SetViewModel(DependencyObject element, object value)
 		{
@@ -44,20 +51,20 @@ namespace NetworkMonitor.Application.Dependencies
 			if (tabControl is MetroTabControl metroTabControl)
 			{ 
 				Log.Debug("Creating Metro Tab Controller adapter.");
-				return new MetroTabControllerAdapter(metroTabControl);
+				return new MetroTabControllerAdapter(metroTabControl, _serviceProvider);
 			}
 
 			throw new NotSupportedException();
 		}
 
-		private static readonly Dictionary<(string name, object viewModel), WeakReference<ITabController>> ControllerRegister = new Dictionary<(string name, object viewModel), WeakReference<ITabController>>();
+		private static readonly Dictionary<(string name, object viewModel), ITabController> ControllerRegister = new Dictionary<(string name, object viewModel), ITabController>();
 
 		private static void RegisterTabController(DependencyObject control, object viewModel, string controllerName)
 		{
 			var tabController = CreateTabController(control);
 			Log.Debug($"Registering tab controller with the name {controllerName}.");
 			if (tabController != null)
-				ControllerRegister.Add((controllerName, viewModel), new WeakReference<ITabController>(tabController));
+				ControllerRegister.Add((controllerName, viewModel), tabController);
 		}
 
 		private static void ControllerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -70,57 +77,14 @@ namespace NetworkMonitor.Application.Dependencies
 			RegisterTabController(d, GetViewModel(d), GetControllerName(d));
 		}
 
-		public ITabController GetController(object viewModel, string name)
+		public bool TryGetController(object viewModel, string name, out ITabController controller)
 		{
-			if (ControllerRegister.TryGetValue((name, viewModel), out var reference))
+			if (ControllerRegister.TryGetValue((name, viewModel), out controller) && controller.IsOperational)
 			{
-				if (reference.TryGetTarget(out var controller))
-					return controller;
+				return true;
 			}
 
-			return null;
+			return false;
 		}
-	}
-
-	public class MetroTabControllerAdapter : ITabController
-	{
-		private readonly MetroTabControl _metroTabControl;
-
-		public MetroTabControllerAdapter(MetroTabControl metroTabControl)
-		{
-			_metroTabControl = metroTabControl;
-		}
-
-		public void InsertAt(int index, object model)
-		{
-			_metroTabControl.Items.Insert(index, model);
-		}
-
-		public void Insert(object model)
-		{
-			_metroTabControl.Items.Add(model);
-		}
-
-		public void Remove(object model)
-		{
-//			_metroTabControl.Items.Insert(index, model);
-		}
-
-		public void RemoveAt(int index)
-		{
-			_metroTabControl.Items.RemoveAt(index);
-		}
-
-		public void Focus(object model)
-		{
-//			_metroTabControl.Items.Insert(index, model);
-		}
-
-		public void FocusAt(int index)
-		{
-			var item = _metroTabControl.Items[index];
-		}
-
-		public int TabCount => _metroTabControl?.Items?.Count ?? 0;
 	}
 }

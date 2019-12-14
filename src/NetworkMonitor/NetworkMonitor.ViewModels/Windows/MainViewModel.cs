@@ -18,6 +18,7 @@ using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.ViewModels.Common;
 using NetworkMonitor.ViewModels.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping;
 
 namespace NetworkMonitor.ViewModels.Windows
 {
@@ -25,8 +26,8 @@ namespace NetworkMonitor.ViewModels.Windows
 	{
 		protected override async Task OnActivateAsync(IActivationContext context)
 		{
-			Transmitters = new TransmittersOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>());
-			Receivers = new ReceiversOverviewViewModel();
+			Transmitters = new TransmittersOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>());
+			Receivers = new ReceiversOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>());
 
 			await Task.WhenAll(Transmitters.ActivateAsync(context), Receivers.ActivateAsync(context));
 		}
@@ -45,14 +46,6 @@ namespace NetworkMonitor.ViewModels.Windows
 		{
 			get { return _receivers; }
 			set { SetValue(ref _receivers, value, nameof(Receivers)); }
-		}
-
-		private ITabController _tabController;
-
-		public ITabController TabController
-		{
-			get { return _tabController; }
-			set { SetValue(ref _tabController, value, nameof(TabController)); }
 		}
 
 		/// <inheritdoc />

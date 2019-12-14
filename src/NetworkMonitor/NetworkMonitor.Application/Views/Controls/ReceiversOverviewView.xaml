@@ -16,7 +16,7 @@
             <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
 		<framework:ToolbarPanel Style="{StaticResource ToolbarPanelStyle}">
-			<Button Content="New Receiver"></Button>
+			<Button Content="New Receiver" Command="{Binding Path=NewReceiverCommand}"></Button>
 		</framework:ToolbarPanel>
 		<ListView Grid.Row="1"></ListView>
 	</Grid>

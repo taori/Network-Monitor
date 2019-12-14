@@ -2,12 +2,15 @@ namespace NetworkMonitor.Framework.Mvvm.Abstraction.UI
 {
 	public interface ITabController
 	{
-		void InsertAt(int index, object model);
-		void Insert(object model);
-		void Remove(object model);
+		bool IsOperational { get; }
+		void Insert(int index, ITab model);
+		void Add(ITab model);
+		void Remove(ITab model);
+		int FindIndex(ITab model);
 		void RemoveAt(int index);
-		void Focus(object model);
+		void Focus(ITab model);
 		void FocusAt(int index);
+		void FocusLast();
 		int TabCount { get; }
 	}
 }

@@ -4,6 +4,6 @@ namespace NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping
 {
 	public interface ITabControllerManager
 	{
-		ITabController GetController(object viewModel, string name);
+		bool TryGetController(object viewModel, string name, out ITabController controller);
 	}
 }
