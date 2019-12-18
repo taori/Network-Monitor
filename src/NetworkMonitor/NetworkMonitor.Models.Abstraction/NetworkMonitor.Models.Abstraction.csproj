@@ -17,4 +17,8 @@
     <ProjectReference Include="..\NetworkMonitor.Framework\NetworkMonitor.Framework.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entities\" />
+  </ItemGroup>
+
 </Project>

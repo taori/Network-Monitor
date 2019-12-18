@@ -1,0 +1,36 @@
+﻿<UserControl x:Class="NetworkMonitor.Application.Views.Controls.ReceiverView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:NetworkMonitor.Application.Views.Controls"
+             xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
+             xmlns:controls="clr-namespace:NetworkMonitor.ViewModels.Controls;assembly=NetworkMonitor.ViewModels"
+             xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance controls:ReceiverViewModel}"
+             d:DesignHeight="450" d:DesignWidth="800">
+	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="*" />
+			<RowDefinition Height="150" />
+		</Grid.RowDefinitions>
+		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
+			<Button Content="Save" Command="{Binding Path=SaveCommand}"/>
+			<Button Content="Activate" Command="{Binding Path=ActivateCommand}"/>
+		</framework:ToolbarPanel>
+		<framework:ContentPanel Grid.Row="1">
+			<StackPanel 
+				framework:PanelExtensions.ChildMargin="0,0,0,10" >
+				<TextBox mah:TextBoxHelper.Watermark="Display name:" 
+				         Text="{Binding Path=DisplayName}" />
+				<TextBox mah:TextBoxHelper.Watermark="Port number:" 
+				         Text="{Binding Path=PortNumber}" />
+			</StackPanel>
+		</framework:ContentPanel>
+		<framework:ContentPanel Grid.Row="2">
+			<TextBox IsReadOnly="True"></TextBox>
+		</framework:ContentPanel>
+	</Grid>
+</UserControl>

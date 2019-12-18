@@ -7,6 +7,7 @@
              xmlns:controls="clr-namespace:NetworkMonitor.ViewModels.Controls;assembly=NetworkMonitor.ViewModels"
              xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
              mc:Ignorable="d"
+			 x:Name="Self"
              d:DataContext="{d:DesignInstance controls:TransmittersOverviewViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
 	<Grid>
@@ -17,9 +18,37 @@
 			<RowDefinition Height="Auto"></RowDefinition>
 			<RowDefinition Height="*"></RowDefinition>
 		</Grid.RowDefinitions>
-		<framework:ToolbarPanel Style="{StaticResource ToolbarPanelStyle}">
+		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
 			<Button Content="New Transmitter" Command="{Binding Path=NewTransmitterCommand}"></Button>
 		</framework:ToolbarPanel>
-		<ListView Grid.Row="1"></ListView>
+		<ListView Grid.Row="1" ItemsSource="{Binding Path=Transmitters}">
+			<ListView.ItemTemplate>
+				<DataTemplate>
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto" />
+							<ColumnDefinition Width="1*" />
+							<ColumnDefinition Width="1*" />
+							<ColumnDefinition Width="8*" />
+						</Grid.ColumnDefinitions>
+						<StackPanel Grid.Column="0" 
+						            Orientation="Horizontal" 
+						            Margin="4,4,8,4" 
+						            framework:PanelExtensions.ChildMargin="0,0,8,0">
+							<Button Content="Open" 
+							        Command="{Binding ElementName=Self, Path=DataContext.OpenItemCommand}"
+							        CommandParameter="{Binding Path=.}"></Button>
+							<Button Content="Delete" 
+							        Background="{StaticResource ValidationSummaryColor1}"
+							        Command="{Binding ElementName=Self, Path=DataContext.DeleteItemCommand}"
+							        CommandParameter="{Binding Path=.}"></Button>
+						</StackPanel>
+						<TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Path=TransmitterType}"></TextBlock>
+						<TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding Path=PortNumber}"></TextBlock>
+						<TextBlock Grid.Column="3" VerticalAlignment="Center" Text="{Binding Path=DisplayName}"></TextBlock>
+					</Grid>
+				</DataTemplate>
+			</ListView.ItemTemplate>
+		</ListView>
 	</Grid>
 </UserControl>

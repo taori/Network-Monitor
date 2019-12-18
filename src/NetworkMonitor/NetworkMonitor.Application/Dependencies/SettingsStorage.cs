@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NetworkMonitor.Application.Resources;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.Environment;
 using Newtonsoft.Json;
@@ -48,6 +49,13 @@ namespace NetworkMonitor.Application.Dependencies
 					{
 						Log.Debug($"Value matches expected type [{typeof(T).FullName}].");
 						value = typed;
+						return true;
+					}
+
+					if (extracted is JArray jArray)
+					{
+						Log.Debug("converting jArray to type [{typeof(T).FullName}].");
+						value = jArray.ToObject<T>();
 						return true;
 					}
 					if (extracted is JObject jObject && jObject.ToObject<T>() is T jTyped)

@@ -14,6 +14,8 @@ using NetworkMonitor.Framework.Mvvm.Integration.ViewMapping;
 using NetworkMonitor.Framework.Mvvm.Interactivity.ViewModelBehaviors;
 using NetworkMonitor.Framework.Mvvm.Navigation;
 using Microsoft.Extensions.DependencyInjection;
+using NetworkMonitor.Framework.Mvvm.Abstraction.Integration;
+using NetworkMonitor.Models.Providers;
 using NLog;
 
 namespace NetworkMonitor.Application.Dependencies.Registrars
@@ -34,9 +36,12 @@ namespace NetworkMonitor.Application.Dependencies.Registrars
 			Singleton<IBehaviorRunner, BehaviorRunner>(services);
 			Singleton<ISettingsStorage, SettingsStorage>(services);
 			Singleton<ITabControllerManager, TabManager>(services);
+			Singleton<IReceiverProvider, ReceiverProvider>(services);
+			Singleton<ITransmitterProvider, TransmitterProvider>(services);
 
 			Transient<IServiceContext, ServiceContext>(services);
 			Transient<IViewModelWindowFactory, WindowFactory>(services);
+
 			services.AddTransient<IRegexDataTemplatePatternProvider>(CreateDefaultConventionPattern);
 		}
 

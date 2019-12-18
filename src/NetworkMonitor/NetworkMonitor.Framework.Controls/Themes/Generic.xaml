@@ -33,6 +33,23 @@
 		</Setter>
 	</Style>
 
+	<Style TargetType="{x:Type local:ContentPanel}">
+		<Setter Property="Padding" Value="10"></Setter>
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type local:ContentPanel}">
+					<Border 
+						BorderThickness="{TemplateBinding BorderThickness}" 
+						BorderBrush="{TemplateBinding BorderBrush}" 
+						Background="{TemplateBinding Background}" 
+						Padding="{TemplateBinding Padding}">
+						<ContentPresenter/>
+					</Border>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+	</Style>
+
 	<Style TargetType="{x:Type local:ToolbarPanel}">
 		<Setter Property="Padding" Value="8"></Setter>
 		<Setter Property="ItemsSpacing" Value="0,0,8,0"></Setter>

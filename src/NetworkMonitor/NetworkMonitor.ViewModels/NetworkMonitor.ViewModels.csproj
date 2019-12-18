@@ -13,7 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="..\NetworkMonitor.Framework.Mvvm\NetworkMonitor.Framework.Mvvm.csproj" />
     <ProjectReference Include="..\NetworkMonitor.Framework\NetworkMonitor.Framework.csproj" />
-    <ProjectReference Include="..\NetworkMonitor.Models.Abstraction\NetworkMonitor.Models.Abstraction.csproj" />
     <ProjectReference Include="..\NetworkMonitor.Models\NetworkMonitor.Models.csproj" />
     <ProjectReference Include="..\NetworkMonitor.Shared\NetworkMonitor.Shared.csproj" />
   </ItemGroup>

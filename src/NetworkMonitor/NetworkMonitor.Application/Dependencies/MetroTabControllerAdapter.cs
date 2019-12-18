@@ -57,6 +57,17 @@ namespace NetworkMonitor.Application.Dependencies
 
 		public bool IsOperational => _metroTabControlReference.TryGetTarget(out _);
 
+		public bool IsFocused(ITab model)
+		{
+			if (MetroTabControl.SelectedContent is MetroContentControl contentControl)
+			{
+				if (contentControl.Content.Equals(model))
+					return true;
+			}
+
+			return false;
+		}
+
 		public void Insert(int index, ITab model)
 		{
 			if (!IsOperational)
@@ -108,12 +119,14 @@ namespace NetworkMonitor.Application.Dependencies
 			}
 		}
 
-		public void Add(ITab model)
+		public int Add(ITab model)
 		{
 			if (!IsOperational)
-				return;
+				return -1;
 
-			Insert(MetroTabControl.Items.Count, model);
+			var count = MetroTabControl.Items.Count;
+			Insert(count, model);
+			return count;
 		}
 
 		public void Remove(ITab model)
@@ -177,6 +190,9 @@ namespace NetworkMonitor.Application.Dependencies
 		public void FocusAt(int index)
 		{
 			if (!IsOperational)
+				return;
+
+			if (index < 0)
 				return;
 
 			if (MetroTabControl.Items[index] is MetroTabItem tabItem)

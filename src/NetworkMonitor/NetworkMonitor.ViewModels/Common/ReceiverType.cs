@@ -1,6 +1,6 @@
 namespace NetworkMonitor.ViewModels.Common
 {
-	public enum ReceiverType
+	public enum ReceiverTLype
 	{
 		Tcp,
 		Udp

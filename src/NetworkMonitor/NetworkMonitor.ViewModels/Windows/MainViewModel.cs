@@ -19,6 +19,7 @@ using NetworkMonitor.ViewModels.Common;
 using NetworkMonitor.ViewModels.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping;
+using NetworkMonitor.Models.Providers;
 
 namespace NetworkMonitor.ViewModels.Windows
 {
@@ -26,8 +27,8 @@ namespace NetworkMonitor.ViewModels.Windows
 	{
 		protected override async Task OnActivateAsync(IActivationContext context)
 		{
-			Transmitters = new TransmittersOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>());
-			Receivers = new ReceiversOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>());
+			Transmitters = new TransmittersOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>(), context.ServiceProvider.GetRequiredService<ITransmitterProvider>());
+			Receivers = new ReceiversOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>(), context.ServiceProvider.GetRequiredService<IReceiverProvider>());
 
 			await Task.WhenAll(Transmitters.ActivateAsync(context), Receivers.ActivateAsync(context));
 		}
