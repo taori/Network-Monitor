@@ -105,8 +105,18 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private ObservableCollection<ReceiverViewModel> CreateReceivers(List<Receiver> items)
 		{
-			var result = new ObservableCollection<ReceiverViewModel>(items.Select(d => new ReceiverViewModel(d)));
+			var result = new ObservableCollection<ReceiverViewModel>(items.Select(d =>
+			{
+				var item = new ReceiverViewModel(d);
+				item.WhenSaveRequested.Subscribe(SaveItem);
+				return item;
+			}));
 			return result;
+		}
+
+		private void SaveItem(Receiver receiver)
+		{
+			_receiverProvider.SaveAsync(receiver);
 		}
 
 		private Task NewReceiverExecute(object arg)

@@ -3,10 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:NetworkMonitor.Application.Views.Controls"
              xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
              xmlns:controls="clr-namespace:NetworkMonitor.ViewModels.Controls;assembly=NetworkMonitor.ViewModels"
              xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+             xmlns:markup="clr-namespace:NetworkMonitor.Framework.Mvvm.Markup;assembly=NetworkMonitor.Framework.Mvvm"
+             xmlns:enums="clr-namespace:NetworkMonitor.Models.Enums;assembly=NetworkMonitor.Models"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:helpers="clr-namespace:NetworkMonitor.Framework.Controls.Helpers;assembly=NetworkMonitor.Framework.Controls"
+             xmlns:common="clr-namespace:NetworkMonitor.ViewModels.Common;assembly=NetworkMonitor.ViewModels"
+             xmlns:dependencies="clr-namespace:NetworkMonitor.Application.Dependencies"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance controls:TransmitterViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -14,19 +19,62 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="*" />
+			<RowDefinition Height="200" />
 		</Grid.RowDefinitions>
 		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
 			<Button Content="Save" Command="{Binding Path=SaveCommand}"/>
 			<Button Content="Activate" Command="{Binding Path=ActivateCommand}"/>
+			<Button Content="Clear messages" Command="{Binding Path=ClearLogCommand}"/>
 		</framework:ToolbarPanel>
 		<framework:ContentPanel Grid.Row="1">
-			<StackPanel
-				framework:PanelExtensions.ChildMargin="0,0,0,10" >
-				<TextBox mah:TextBoxHelper.Watermark="Display name:" 
-				         Text="{Binding Path=DisplayName}" />
-				<TextBox mah:TextBoxHelper.Watermark="Port number:" 
-				         Text="{Binding Path=PortNumber}" />
-			</StackPanel>
+			<ScrollViewer 
+				VerticalScrollBarVisibility="Auto" 
+				HorizontalScrollBarVisibility="Hidden">
+				<StackPanel
+					helpers:PanelHelper.ChildMargin="0,0,0,10" >
+					<TextBox mah:TextBoxHelper.Watermark="Display name:" 
+					         Text="{Binding Path=DisplayName}" />
+					<ComboBox ItemsSource="{Binding Source={markup:EnumSource {x:Type enums:TransmitterType}}}" 
+					          SelectedValuePath="Value"
+					          DisplayMemberPath="Description"
+					          SelectedValue="{Binding Path=TransmitterType}"></ComboBox>
+					<TextBox mah:TextBoxHelper.Watermark="Port number:" 
+					         Text="{Binding Path=PortNumber}" />
+				</StackPanel>
+			</ScrollViewer>
+		</framework:ContentPanel>
+		<framework:ContentPanel Grid.Row="2">
+			<DockPanel>
+				<TextBox mah:TextBoxHelper.Watermark="Message: (Press enter to send)" 
+						 DockPanel.Dock="Bottom"
+						 Margin="0,8,0,0"
+						 ToolTip="Press enter to send"
+						 Text="{Binding Path=NewMessage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
+					<TextBox.InputBindings>
+						<KeyBinding Key="Enter" Command="{Binding Path=NewMessageCommand}"></KeyBinding>
+					</TextBox.InputBindings>
+				</TextBox>
+
+				<ListView ItemsSource="{Binding Path=Messages}">
+					<ListView.Resources>
+						<DataTemplate DataType="{x:Type common:NetworkContentMessage}">
+							<StackPanel Orientation="Horizontal">
+								<TextBlock Text="{Binding Path=DateTime, StringFormat=hh:mm:ss}"/>
+								<Image Source="{iconPacks:MaterialImage InformationOutline, Brush=Black}" Margin="4,0" />
+								<TextBlock Text="{Binding Path=Message}"/>
+							</StackPanel>
+						</DataTemplate>
+
+						<DataTemplate DataType="{x:Type common:NetworkStatusMessage}">
+							<StackPanel Orientation="Horizontal">
+								<TextBlock Text="{Binding Path=DateTime, StringFormat=hh:mm:ss}"/>
+								<Image Source="{Binding Path=Type, Converter={dependencies:NetworkStatusMessageTypeIcon}}" Margin="4,0" />
+								<TextBlock Text="{Binding Path=Message}"/>
+							</StackPanel>
+						</DataTemplate>
+					</ListView.Resources>
+				</ListView>
+			</DockPanel>
 		</framework:ContentPanel>
 	</Grid>
 </UserControl>

@@ -9,4 +9,4 @@ using System.Windows.Markup;
 )]
 [assembly: XmlnsPrefix("http://schemas.localcontrols.com/winfx/2006/xaml/presentation", "framework")]
 [assembly: XmlnsDefinition("http://schemas.localcontrols.com/winfx/2006/xaml/presentation", "NetworkMonitor.Framework.Controls")]
-[assembly: XmlnsDefinition("http://schemas.localcontrols.com/winfx/2006/xaml/presentation", "NetworkMonitor.Framework.Controls.Extensions")]
+[assembly: XmlnsDefinition("http://schemas.localcontrols.com/winfx/2006/xaml/presentation", "NetworkMonitor.Framework.Controls.Helpers")]

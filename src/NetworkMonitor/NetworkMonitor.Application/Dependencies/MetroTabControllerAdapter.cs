@@ -72,6 +72,7 @@ namespace NetworkMonitor.Application.Dependencies
 		{
 			if (!IsOperational)
 				return;
+
 			var tab = new MetroTabItem();
 			var contentControl = new MetroContentControl();
 			contentControl.Content = model;
@@ -81,6 +82,10 @@ namespace NetworkMonitor.Application.Dependencies
 			tab.CloseButtonEnabled = model.Closable;
 			tab.CloseButtonMargin = new Thickness(0, 8, 0, 0);
 			tab.CloseTabCommand = new TaskCommand(o => Task.CompletedTask);
+
+			model.WhenTitleChanged
+				.ObserveOn(System.Windows.Application.Current.Dispatcher)
+				.Subscribe(d => tab.Header = d);
 
 			MetroTabControl.Items.Insert(index, tab);
 		}

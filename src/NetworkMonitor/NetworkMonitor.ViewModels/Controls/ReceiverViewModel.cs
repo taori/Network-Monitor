@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
+using NetworkMonitor.Framework;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
 using NetworkMonitor.Framework.Mvvm.Abstraction.UI;
@@ -22,6 +26,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			DataItem = dataItem;
 			DisplayName = dataItem.DisplayName;
 			PortNumber = dataItem.PortNumber;
+			ReceiverType = dataItem.ReceiverType;
 		}
 
 		public ReceiverViewModel()
@@ -68,9 +73,17 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _receiverType, value, nameof(ReceiverType)); }
 		}
 
+		private Subject<Receiver> _whenSaveRequested = new Subject<Receiver>();
+		public IObservable<Receiver> WhenSaveRequested => _whenSaveRequested;
+
 		protected override Task OnActivateAsync(IActivationContext context)
 		{
+			PortNumber = DataItem.PortNumber;
+			ReceiverType = DataItem.ReceiverType;
+			DisplayName = DataItem.DisplayName;
+
 			Title = DisplayName;
+
 			SaveCommand = new ActionCommand(SaveExecute);
 			ActivateCommand = new ActionCommand(ActivateExecute);
 			return Task.CompletedTask;
@@ -78,6 +91,13 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private void SaveExecute()
 		{
+			Title = DisplayName;
+
+			DataItem.PortNumber = PortNumber;
+			DataItem.ReceiverType = ReceiverType;
+			DataItem.DisplayName = DisplayName;
+
+			_whenSaveRequested.OnNext(DataItem);
 		}
 
 		private void ActivateExecute()

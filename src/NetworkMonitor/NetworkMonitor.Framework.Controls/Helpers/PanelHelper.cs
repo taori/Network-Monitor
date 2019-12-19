@@ -1,12 +1,13 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
-namespace NetworkMonitor.Framework.Controls.Extensions
+namespace NetworkMonitor.Framework.Controls.Helpers
 {
-	public class PanelExtensions
+	public class PanelHelper
 	{
 		public static readonly DependencyProperty ChildMarginProperty = DependencyProperty.RegisterAttached(
-			"ChildMargin", typeof(Thickness), typeof(PanelExtensions), new UIPropertyMetadata(new Thickness(), ChildMarginChanged));
+			"ChildMargin", typeof(Thickness), typeof(PanelHelper), new UIPropertyMetadata(new Thickness(), ChildMarginChanged));
 
 		private static void ChildMarginChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
@@ -54,7 +55,7 @@ namespace NetworkMonitor.Framework.Controls.Extensions
 		}
 
 		public static readonly DependencyProperty SkipLastMarginProperty = DependencyProperty.RegisterAttached(
-			"SkipLastMargin", typeof(bool), typeof(PanelExtensions), new PropertyMetadata(true));
+			"SkipLastMargin", typeof(bool), typeof(PanelHelper), new PropertyMetadata(true));
 
 		public static void SetSkipLastMargin(DependencyObject element, bool value)
 		{

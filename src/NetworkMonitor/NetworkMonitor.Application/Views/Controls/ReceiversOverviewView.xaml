@@ -7,6 +7,7 @@
              xmlns:controls="clr-namespace:NetworkMonitor.ViewModels.Controls;assembly=NetworkMonitor.ViewModels"
              xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
              xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
+             xmlns:helpers="clr-namespace:NetworkMonitor.Framework.Controls.Helpers;assembly=NetworkMonitor.Framework.Controls"
              mc:Ignorable="d" 
              x:Name="Self"
              d:DataContext="{d:DesignInstance controls:ReceiversOverviewViewModel}"
@@ -32,7 +33,7 @@
 						<StackPanel Grid.Column="0" 
 						            Orientation="Horizontal" 
 						            Margin="4,4,8,4" 
-						            framework:PanelExtensions.ChildMargin="0,0,8,0">
+						            helpers:PanelHelper.ChildMargin="0,0,8,0">
                             <Button Content="Open" 
                                     Command="{Binding ElementName=Self, Path=DataContext.OpenItemCommand}"
                                     CommandParameter="{Binding Path=.}"></Button>

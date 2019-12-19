@@ -119,7 +119,17 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private ObservableCollection<TransmitterViewModel> CreateTransmitters(List<Transmitter> all)
 		{
-			return new ObservableCollection<TransmitterViewModel>(all.Select(d => new TransmitterViewModel(d)));
+			return new ObservableCollection<TransmitterViewModel>(all.Select(d =>
+			{
+				var viewModel = new TransmitterViewModel(d);
+				viewModel.WhenSaveRequested.Subscribe(SaveItem);
+				return viewModel;
+			}));
+		}
+
+		private async void SaveItem(Transmitter transmitter)
+		{
+			await _transmitterProvider.SaveAsync(transmitter);
 		}
 
 		public override IEnumerable<IBehavior> GetDefaultBehaviors()
