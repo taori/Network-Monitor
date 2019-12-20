@@ -10,6 +10,9 @@
              xmlns:markup="clr-namespace:NetworkMonitor.Framework.Mvvm.Markup;assembly=NetworkMonitor.Framework.Mvvm"
              xmlns:enums="clr-namespace:NetworkMonitor.Models.Enums;assembly=NetworkMonitor.Models"
              xmlns:helpers="clr-namespace:NetworkMonitor.Framework.Controls.Helpers;assembly=NetworkMonitor.Framework.Controls"
+             xmlns:common="clr-namespace:NetworkMonitor.ViewModels.Common;assembly=NetworkMonitor.ViewModels"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:dependencies="clr-namespace:NetworkMonitor.Application.Dependencies"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance controls:ReceiverViewModel}"
              d:DesignHeight="450" d:DesignWidth="800">
@@ -17,13 +20,17 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="*" />
-			<RowDefinition Height="150" />
 		</Grid.RowDefinitions>
-		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="1*" />
+			<ColumnDefinition Width="3*" />
+		</Grid.ColumnDefinitions>
+		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}" Grid.ColumnSpan="2">
 			<Button Content="Save" Command="{Binding Path=SaveCommand}"/>
-			<Button Content="Activate" Command="{Binding Path=ActivateCommand}"/>
+			<Button Content="{Binding Path=ToggleMessage}" Command="{Binding Path=ToggleCommand}"/>
+			<Button Content="Clear log" Command="{Binding Path=ClearMessagesCommand}"/>
 		</framework:ToolbarPanel>
-		<framework:ContentPanel Grid.Row="1">
+		<framework:ContentPanel Grid.Row="1" Grid.Column="0">
 			<StackPanel 
 				helpers:PanelHelper.ChildMargin="0,0,0,10" >
 				<TextBox mah:TextBoxHelper.Watermark="Display name:" 
@@ -33,11 +40,43 @@
 						  DisplayMemberPath="Description"
 				          SelectedValue="{Binding Path=ReceiverType}"></ComboBox>
 				<TextBox mah:TextBoxHelper.Watermark="Port number:" 
-				         Text="{Binding Path=PortNumber}" />
+				         Text="{Binding Path=PortNumber, UpdateSourceTrigger=PropertyChanged}" />
+				<CheckBox Content="Broadcast" IsChecked="{Binding Path=Broadcast, UpdateSourceTrigger=PropertyChanged}"></CheckBox>
+				<TextBox mah:TextBoxHelper.Watermark="IpAddress:" 
+				         IsReadOnly="{Binding Path=Broadcast}"
+				         Visibility="{Binding Path=Broadcast, Converter={StaticResource BooleanToVisibilityInversedConverter}}">
+					<TextBox.Text>
+						<Binding Path="IpAddress" UpdateSourceTrigger="PropertyChanged">
+							<Binding.ValidationRules>
+								<dependencies:IpValidator></dependencies:IpValidator>
+							</Binding.ValidationRules>
+						</Binding>
+					</TextBox.Text>
+				</TextBox>
 			</StackPanel>
 		</framework:ContentPanel>
-		<framework:ContentPanel Grid.Row="2">
-			<TextBox IsReadOnly="True"></TextBox>
+		<framework:ContentPanel Grid.Row="1" Grid.Column="1">
+
+			<ListView ItemsSource="{Binding Path=Messages}">
+				<ListView.Resources>
+					<DataTemplate DataType="{x:Type common:NetworkContentMessage}">
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="{Binding Path=DateTime, StringFormat={StaticResource DateFormat}}"/>
+							<Image Source="{iconPacks:MaterialImage InformationOutline, Brush=Black}" Margin="4,0" />
+							<TextBlock Text="{Binding Path=Message}"/>
+						</StackPanel>
+					</DataTemplate>
+
+					<DataTemplate DataType="{x:Type common:NetworkStatusMessage}">
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="{Binding Path=DateTime, StringFormat={StaticResource DateFormat}}"/>
+							<Image Source="{Binding Path=Type, Converter={dependencies:NetworkStatusMessageTypeIcon}}" Margin="4,0" />
+							<TextBlock Text="{Binding Path=Message}"/>
+						</StackPanel>
+					</DataTemplate>
+				</ListView.Resources>
+			</ListView>
+
 		</framework:ContentPanel>
 	</Grid>
 </UserControl>

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
 using NetworkMonitor.Framework.Mvvm.Abstraction.ViewModel;
 
@@ -14,6 +15,12 @@ namespace NetworkMonitor.Framework.Mvvm.ViewModel
 		{
 			yield break;
 		}
+
+		/// <inheritdoc />
+		public ObservableCollection<IWindowCommand> LeftWindowCommands { get; } = new ObservableCollection<IWindowCommand>();
+
+		/// <inheritdoc />
+		public ObservableCollection<IWindowCommand> RightWindowCommands { get; } = new ObservableCollection<IWindowCommand>();
 
 		/// <inheritdoc />
 		public IWindowViewModel Window => _windowReference.TryGetTarget(out var reference) ? reference : null;

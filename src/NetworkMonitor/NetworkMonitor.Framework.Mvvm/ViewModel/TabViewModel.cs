@@ -1,12 +1,24 @@
 using System;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework.Mvvm.Abstraction.UI;
 
 namespace NetworkMonitor.Framework.Mvvm.ViewModel
 {
 	public abstract class TabViewModel : ContentViewModel, ITab
 	{
+		protected TabViewModel()
+		{
+			TabCloseCommand = new ActionCommand(TabCloseExecute);
+		}
+
+		private void TabCloseExecute(object obj)
+		{
+			_whenCloseRequested.OnNext(null);
+		}
+
 		private string _title;
 
 		public string Title
@@ -19,6 +31,14 @@ namespace NetworkMonitor.Framework.Mvvm.ViewModel
 					_whenTitleChanged.OnNext(value);
 				}
 			}
+		}
+
+		private ICommand _tabCloseCommand;
+
+		public ICommand TabCloseCommand
+		{
+			get { return _tabCloseCommand; }
+			set { SetValue(ref _tabCloseCommand, value, nameof(TabCloseCommand)); }
 		}
 
 		private Subject<string> _whenTitleChanged = new Subject<string>();
@@ -41,9 +61,11 @@ namespace NetworkMonitor.Framework.Mvvm.ViewModel
 		private Subject<bool> _whenClosableChanged = new Subject<bool>();
 		public IObservable<bool> WhenClosableChanged => _whenClosableChanged;
 
-		public virtual Task<bool> TryCloseTabAsync()
+		private Subject<object> _whenCloseRequested = new Subject<object>();
+		public IObservable<object> WhenCloseRequested => _whenCloseRequested;
+		public void CloseTab()
 		{
-			return Task.FromResult(true);
+			TabCloseExecute(null);
 		}
 	}
 }

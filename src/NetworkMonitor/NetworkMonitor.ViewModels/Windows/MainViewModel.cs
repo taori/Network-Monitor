@@ -18,7 +18,9 @@ using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.ViewModels.Common;
 using NetworkMonitor.ViewModels.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping;
+using NetworkMonitor.Framework.Mvvm.Integration.ViewMapping;
 using NetworkMonitor.Models.Providers;
 
 namespace NetworkMonitor.ViewModels.Windows
@@ -30,8 +32,18 @@ namespace NetworkMonitor.ViewModels.Windows
 			Transmitters = new TransmittersOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>(), context.ServiceProvider.GetRequiredService<ITransmitterProvider>());
 			Receivers = new ReceiversOverviewViewModel(this, context.ServiceProvider.GetRequiredService<IDialogService>(), context.ServiceProvider.GetRequiredService<ITabControllerManager>(), context.ServiceProvider.GetRequiredService<IReceiverProvider>());
 
+			this.RightWindowCommands.Add(new WindowTextCommand(new TaskCommand(OpenSettingsExecute), "Settings"));
+
 			await Task.WhenAll(Transmitters.ActivateAsync(context), Receivers.ActivateAsync(context));
 		}
+
+		private async Task OpenSettingsExecute(object arg)
+		{
+			var window = new DefaultWindowViewModel(SettingsViewModel);
+			await this.ServiceProvider.GetRequiredService<INavigationService>().OpenWindowAsync(window, nameof(SettingsViewModel));
+		}
+		
+		public SettingsViewModel SettingsViewModel { get; set; } = new SettingsViewModel();
 
 		private TransmittersOverviewViewModel _transmitters;
 

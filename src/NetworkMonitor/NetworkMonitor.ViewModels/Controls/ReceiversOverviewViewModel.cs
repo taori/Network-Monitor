@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
@@ -12,16 +13,19 @@ using NetworkMonitor.Framework.Mvvm.Commands;
 using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.Models.Providers;
+using NetworkMonitor.ViewModels.Services;
 using NetworkMonitor.ViewModels.Windows;
 
 namespace NetworkMonitor.ViewModels.Controls
 {
 	public class ReceiversOverviewViewModel : ContentViewModel
 	{
+		private IApplicationSettings _applicationSettings;
 		private readonly MainViewModel _mainViewModel;
 		private readonly IDialogService _dialogService;
 		private readonly ITabControllerManager _tabControllerManager;
 		private readonly IReceiverProvider _receiverProvider;
+
 
 		public ReceiversOverviewViewModel(MainViewModel mainViewModel, IDialogService dialogService, ITabControllerManager tabControllerManager, IReceiverProvider receiverProvider)
 		{
@@ -33,6 +37,7 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private ICommand _newReceiverCommand;
 
+
 		public ICommand NewReceiverCommand
 		{
 			get { return _newReceiverCommand; }
@@ -41,6 +46,7 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private ICommand _openItemCommand;
 
+
 		public ICommand OpenItemCommand
 		{
 			get { return _openItemCommand; }
@@ -48,6 +54,7 @@ namespace NetworkMonitor.ViewModels.Controls
 		}
 
 		private ICommand _deleteItemCommand;
+
 
 		public ICommand DeleteItemCommand
 		{
@@ -70,6 +77,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			DeleteItemCommand = new TaskCommand(DeleteItemExecute);
 
 			var all = await _receiverProvider.GetAllAsync();
+			_applicationSettings = context.ServiceProvider.GetRequiredService<IApplicationSettings>();
 			Receivers = CreateReceivers(all);
 		}
 
@@ -84,18 +92,22 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private Task OpenItemExecute(object arg)
 		{
-			if (arg is ReceiverViewModel receiverViewModel)
+			if (arg is ReceiverViewModel itemViewModel)
 			{
 				if (_tabControllerManager.TryGetController(_mainViewModel, null, out var tabController))
 				{
-					var index = tabController.FindIndex(receiverViewModel);
+					var index = tabController.FindIndex(itemViewModel);
 					if (index >= 0)
 					{
 						tabController.FocusAt(index);
 					}
 					else
 					{
-						tabController.FocusAt(tabController.Add(receiverViewModel));
+						var newIndex = tabController.Add(itemViewModel);
+
+						if (!_applicationSettings.FocusTabOnOpen)
+							return Task.CompletedTask;
+						tabController.FocusAt(newIndex);
 					}
 				}
 			}
@@ -128,7 +140,9 @@ namespace NetworkMonitor.ViewModels.Controls
 
 			var viewModel = new ReceiverViewModel(receiver);
 			Receivers.Add(viewModel);
-			OpenItemExecute(viewModel);
+
+			if (_applicationSettings.FocusTabOnCreate)
+				OpenItemExecute(viewModel);
 
 			return Task.CompletedTask;
 		}

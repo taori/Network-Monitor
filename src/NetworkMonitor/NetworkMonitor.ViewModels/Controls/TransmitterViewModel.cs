@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
+using NetworkMonitor.Framework.Mvvm.Abstraction.UI;
+using NetworkMonitor.Framework.Mvvm.Commands;
 using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.ViewModels.Common;
+using NetworkMonitor.ViewModels.Services;
+using NetworkMonitor.ViewModels.Windows;
 using TransmitterType = NetworkMonitor.Models.Enums.TransmitterType;
 
 namespace NetworkMonitor.ViewModels.Controls
@@ -17,26 +24,29 @@ namespace NetworkMonitor.ViewModels.Controls
 	public class TransmitterViewModel : TabViewModel
 	{
 		public readonly Transmitter DataItem;
+		private readonly IDialogService _dialogService;
+		private readonly MainViewModel _mainViewModel;
 
-		public TransmitterViewModel(Transmitter dataItem)
+		public TransmitterViewModel(Transmitter dataItem, IDialogService dialogService, MainViewModel mainViewModel)
 		{
 			DataItem = dataItem;
+			_dialogService = dialogService;
+			_mainViewModel = mainViewModel;
+
 			Closable = true;
 			DisplayName = dataItem.DisplayName;
 			PortNumber = dataItem.PortNumber;
 			TransmitterType = dataItem.TransmitterType;
-		}
-
-		public TransmitterViewModel()
-		{
+			Broadcast = dataItem.Broadcast;
+			IpAddress = dataItem.IpAddress;
 		}
 
 		protected override Task OnActivateAsync(IActivationContext context)
 		{
 			Title = DisplayName;
-			SaveCommand = new ActionCommand(SaveExecute);
-			ActivateCommand = new ActionCommand(ActivateExecute);
-			NewMessageCommand = new ActionCommand(NewMessageExecute);
+			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive);
+			ToggleCommand = new ActionCommand(ToggleExecute);
+			NewMessageCommand = new TaskCommand(NewMessageExecute);
 			ClearLogCommand = new ActionCommand(ClearLogExecute);
 			return Task.CompletedTask;
 		}
@@ -46,39 +56,126 @@ namespace NetworkMonitor.ViewModels.Controls
 			Messages.Clear();
 		}
 
-		private void NewMessageExecute()
+		private async Task NewMessageExecute(object parameter)
 		{
-			Messages.Insert(0, new NetworkContentMessage(NewMessage));
-			Messages.Insert(0, new NetworkStatusMessage(NetworkStatusMessageType.Connection, NewMessage));
-			Messages.Insert(0, new NetworkStatusMessage(NetworkStatusMessageType.Information, NewMessage));
-			Messages.Insert(0, new NetworkStatusMessage(NetworkStatusMessageType.Error, NewMessage));
+			if (!IsActive)
+			{
+				if (!await _dialogService.YesNoAsync(_mainViewModel,
+					"The client is not running yet. Do you want to start it?"))
+					return;
 
+				ToggleExecute();
+			}
+
+			var encoding = DataItem.Encoding ?? Encoding.UTF8;
+			var bytes = encoding.GetBytes(NewMessage);
+
+			AddContentMessage($"Sending message \"{NewMessage}\" using encoding {encoding.BodyName}.");
+			var bytesSent = await _transmissionClient.SendAsync(bytes);
+			if (bytesSent == bytes.Length)
+				AddStatusMessage(NetworkStatusMessageType.Information, "Transmission successful.");
 			NewMessage = string.Empty;
 		}
 
-		private void ActivateExecute()
+		private ITransmissionClient CreateClient(Transmitter transmitter)
 		{
-			
+			switch (DataItem.TransmitterType)
+			{
+				case TransmitterType.Tcp:
+					return new TcpTransmissionClient(transmitter);
+				case TransmitterType.Udp:
+					return new UdpTransmissionClient(transmitter);
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
 		}
 
-		private void SaveExecute()
+		private ITransmissionClient _transmissionClient;
+		private void ToggleExecute()
+		{
+			if (_transmissionClient == null || !IsActive)
+			{
+				if (_transmissionClient != null)
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Terminating old client.");
+
+				_transmissionClient?.Terminate();
+				AddStatusMessage(NetworkStatusMessageType.Connection, "Creating new client.");
+				_transmissionClient = CreateClient(DataItem);
+				AddStatusMessage(NetworkStatusMessageType.Connection, "Starting new client.");
+				if (_transmissionClient.Execute())
+				{
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Client running.");
+					IsActive = true;
+				}
+				else
+				{
+					AddStatusMessage(NetworkStatusMessageType.Error, "Client failed to start.");
+				}
+			}
+			else
+			{
+				if (_transmissionClient != null)
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Terminating old client.");
+
+				_transmissionClient?.Terminate();
+
+				IsActive = false;
+			}
+		}
+
+		private void AddStatusMessage(NetworkStatusMessageType statusType, string message)
+		{
+			Messages.Insert(0, new NetworkStatusMessage(statusType, message));
+		}
+
+		private void AddContentMessage(string message)
+		{
+			Messages.Insert(0, new NetworkContentMessage(message));
+		}
+
+		private Task SaveExecute(object parameter)
 		{
 			DataItem.DisplayName = DisplayName;
 			DataItem.PortNumber = PortNumber;
 			DataItem.TransmitterType = TransmitterType;
+			DataItem.Broadcast = Broadcast;
+			DataItem.IpAddress = IpAddress;
 
 			Title = DisplayName;
 
 			_whenSaveRequested.OnNext(DataItem);
+
+			return Task.CompletedTask;
 		}
 
 		public override IEnumerable<IBehavior> GetDefaultBehaviors()
 		{
 			yield break;
 		}
+		public string ToggleMessage
+		{
+			get { return _isActive ? "Deactivate" : "Activate"; }
+			set { }
+		}
 
 		private Subject<Transmitter> _whenSaveRequested = new Subject<Transmitter>();
 		public IObservable<Transmitter> WhenSaveRequested => _whenSaveRequested;
+
+		private bool _broadcast;
+
+		public bool Broadcast
+		{
+			get { return _broadcast; }
+			set { SetValue(ref _broadcast, value, nameof(Broadcast)); }
+		}
+
+		private string _ipAddress;
+
+		public string IpAddress
+		{
+			get { return _ipAddress; }
+			set { SetValue(ref _ipAddress, value, nameof(IpAddress)); }
+		}
 
 		private TransmitterType _transmitterType;
 
@@ -102,6 +199,20 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			get { return _displayName; }
 			set { SetValue(ref _displayName, value, nameof(DisplayName)); }
+		}
+
+		private bool _isActive;
+
+		public bool IsActive
+		{
+			get { return _isActive; }
+			set
+			{
+				if (SetValue(ref _isActive, value, nameof(IsActive)))
+				{
+					OnPropertyChanged(ToggleMessage);
+				}
+			}
 		}
 
 		private int _portNumber;
@@ -136,12 +247,12 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _clearLogCommand, value, nameof(ClearLogCommand)); }
 		}
 
-		private ICommand _activateCommand;
+		private ICommand _toggleCommand;
 
-		public ICommand ActivateCommand
+		public ICommand ToggleCommand
 		{
-			get { return _activateCommand; }
-			set { SetValue(ref _activateCommand, value, nameof(ActivateCommand)); }
+			get { return _toggleCommand; }
+			set { SetValue(ref _toggleCommand, value, nameof(ToggleCommand)); }
 		}
 
 		private ICommand _newMessageCommand;

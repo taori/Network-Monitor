@@ -31,19 +31,7 @@ namespace NetworkMonitor.Application.Dependencies
 		{
 			_serviceProvider = serviceProvider;
 			metroTabControl.Unloaded += MetroTabControlOnUnloaded;
-			metroTabControl.TabItemClosingEvent += MetroTabControlOnTabItemClosingEvent;
 			_metroTabControlReference = new WeakReference<MetroTabControl>(metroTabControl);
-		}
-		private void MetroTabControlOnTabItemClosingEvent(object sender, BaseMetroTabControl.TabItemClosingEventArgs e)
-		{
-			if (e.ClosingTabItem.Content is MetroContentControl contentControl)
-			{
-				if (contentControl.Content is ITab tab)
-				{
-					var result = Task.Run(() => tab.TryCloseTabAsync()).GetAwaiter().GetResult();
-					e.Cancel = !result;
-				}
-			}
 		}
 
 		private void MetroTabControlOnUnloaded(object sender, RoutedEventArgs e)
@@ -51,7 +39,6 @@ namespace NetworkMonitor.Application.Dependencies
 			if (sender is MetroTabControl control)
 			{
 				control.Unloaded -= MetroTabControlOnUnloaded;
-				control.TabItemClosingEvent -= MetroTabControlOnTabItemClosingEvent;
 			}
 		}
 
@@ -74,6 +61,9 @@ namespace NetworkMonitor.Application.Dependencies
 				return;
 
 			var tab = new MetroTabItem();
+			if(System.Windows.Application.Current.TryFindResource("DefaultMetroTabItem") is var style && style != null)
+				tab.Style = style as Style;
+
 			var contentControl = new MetroContentControl();
 			contentControl.Content = model;
 			tab.Loaded += TabOnLoaded;
@@ -86,6 +76,10 @@ namespace NetworkMonitor.Application.Dependencies
 			model.WhenTitleChanged
 				.ObserveOn(System.Windows.Application.Current.Dispatcher)
 				.Subscribe(d => tab.Header = d);
+
+			model.WhenCloseRequested
+				.ObserveOn(System.Windows.Application.Current.Dispatcher)
+				.Subscribe(d => MetroTabControl.Items.Remove(tab));
 
 			MetroTabControl.Items.Insert(index, tab);
 		}

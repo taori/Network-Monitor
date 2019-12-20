@@ -19,35 +19,51 @@
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto" />
 			<RowDefinition Height="*" />
-			<RowDefinition Height="200" />
 		</Grid.RowDefinitions>
-		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="1*" />
+			<ColumnDefinition Width="3*" />
+		</Grid.ColumnDefinitions>
+		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}" Grid.ColumnSpan="2" Grid.Row="0" Grid.Column="0">
 			<Button Content="Save" Command="{Binding Path=SaveCommand}"/>
-			<Button Content="Activate" Command="{Binding Path=ActivateCommand}"/>
-			<Button Content="Clear messages" Command="{Binding Path=ClearLogCommand}"/>
+			<Button Content="{Binding Path=ToggleMessage, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding Path=ToggleCommand}"/>
+			<Button Content="Clear log" Command="{Binding Path=ClearLogCommand}"/>
+			<Button Content="Close" Command="{Binding Path=TabCloseCommand}"/>
 		</framework:ToolbarPanel>
-		<framework:ContentPanel Grid.Row="1">
+		<framework:ContentPanel Grid.Row="1" Grid.Column="0">
 			<ScrollViewer 
 				VerticalScrollBarVisibility="Auto" 
 				HorizontalScrollBarVisibility="Hidden">
 				<StackPanel
 					helpers:PanelHelper.ChildMargin="0,0,0,10" >
 					<TextBox mah:TextBoxHelper.Watermark="Display name:" 
-					         Text="{Binding Path=DisplayName}" />
+					         Text="{Binding Path=DisplayName, UpdateSourceTrigger=PropertyChanged}" />
 					<ComboBox ItemsSource="{Binding Source={markup:EnumSource {x:Type enums:TransmitterType}}}" 
 					          SelectedValuePath="Value"
 					          DisplayMemberPath="Description"
-					          SelectedValue="{Binding Path=TransmitterType}"></ComboBox>
+					          SelectedValue="{Binding Path=TransmitterType, UpdateSourceTrigger=PropertyChanged}"></ComboBox>
 					<TextBox mah:TextBoxHelper.Watermark="Port number:" 
-					         Text="{Binding Path=PortNumber}" />
+					         Text="{Binding Path=PortNumber, UpdateSourceTrigger=PropertyChanged}" />
+					<CheckBox Content="Broadcast" IsChecked="{Binding Path=Broadcast, UpdateSourceTrigger=PropertyChanged}"></CheckBox>
+					<TextBox mah:TextBoxHelper.Watermark="IpAddress:" 
+							 IsReadOnly="{Binding Path=Broadcast}"
+							 Visibility="{Binding Path=Broadcast, Converter={StaticResource BooleanToVisibilityInversedConverter}}">
+						<TextBox.Text>
+							<Binding Path="IpAddress" UpdateSourceTrigger="PropertyChanged">
+								<Binding.ValidationRules>
+									<dependencies:IpValidator></dependencies:IpValidator>
+								</Binding.ValidationRules>
+							</Binding>
+						</TextBox.Text>
+					</TextBox>
 				</StackPanel>
 			</ScrollViewer>
 		</framework:ContentPanel>
-		<framework:ContentPanel Grid.Row="2">
+		<framework:ContentPanel  Grid.Row="1" Grid.Column="1">
 			<DockPanel>
 				<TextBox mah:TextBoxHelper.Watermark="Message: (Press enter to send)" 
-						 DockPanel.Dock="Bottom"
-						 Margin="0,8,0,0"
+						 DockPanel.Dock="Top"
+						 Margin="0,0,0,8"
 						 ToolTip="Press enter to send"
 						 Text="{Binding Path=NewMessage, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
 					<TextBox.InputBindings>
@@ -59,7 +75,7 @@
 					<ListView.Resources>
 						<DataTemplate DataType="{x:Type common:NetworkContentMessage}">
 							<StackPanel Orientation="Horizontal">
-								<TextBlock Text="{Binding Path=DateTime, StringFormat=hh:mm:ss}"/>
+								<TextBlock Text="{Binding Path=DateTime, StringFormat={StaticResource DateFormat}}"/>
 								<Image Source="{iconPacks:MaterialImage InformationOutline, Brush=Black}" Margin="4,0" />
 								<TextBlock Text="{Binding Path=Message}"/>
 							</StackPanel>
@@ -67,7 +83,7 @@
 
 						<DataTemplate DataType="{x:Type common:NetworkStatusMessage}">
 							<StackPanel Orientation="Horizontal">
-								<TextBlock Text="{Binding Path=DateTime, StringFormat=hh:mm:ss}"/>
+								<TextBlock Text="{Binding Path=DateTime, StringFormat={StaticResource DateFormat}}"/>
 								<Image Source="{Binding Path=Type, Converter={dependencies:NetworkStatusMessageTypeIcon}}" Margin="4,0" />
 								<TextBlock Text="{Binding Path=Message}"/>
 							</StackPanel>

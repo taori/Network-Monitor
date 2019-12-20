@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework;
@@ -13,6 +16,7 @@ using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.Models.Enums;
 using NetworkMonitor.ViewModels.Common;
+using NetworkMonitor.ViewModels.Services;
 
 namespace NetworkMonitor.ViewModels.Controls
 {
@@ -24,13 +28,11 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			Closable = true;
 			DataItem = dataItem;
-			DisplayName = dataItem.DisplayName;
-			PortNumber = dataItem.PortNumber;
-			ReceiverType = dataItem.ReceiverType;
-		}
-
-		public ReceiverViewModel()
-		{
+			DisplayName = DataItem.DisplayName;
+			PortNumber = DataItem.PortNumber;
+			ReceiverType = DataItem.ReceiverType;
+			IpAddress = DataItem.IpAddress;
+			Broadcast = DataItem.Broadcast;
 		}
 
 		private int _portNumber;
@@ -57,12 +59,38 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _saveCommand, value, nameof(SaveCommand)); }
 		}
 
-		private ICommand _activateCommand;
+		private ICommand _toggleCommand;
 
-		public ICommand ActivateCommand
+		public ICommand ToggleCommand
 		{
-			get { return _activateCommand; }
-			set { SetValue(ref _activateCommand, value, nameof(ActivateCommand)); }
+			get { return _toggleCommand; }
+			set { SetValue(ref _toggleCommand, value, nameof(ToggleCommand)); }
+		}
+
+		private ICommand _clearMessagesCommand;
+
+		public ICommand ClearMessagesCommand
+		{
+			get { return _clearMessagesCommand; }
+			set { SetValue(ref _clearMessagesCommand, value, nameof(ClearMessagesCommand)); }
+		}
+
+		private bool _isActive;
+
+		public bool IsActive
+		{
+			get { return _isActive; }
+			set {
+				if (SetValue(ref _isActive, value, nameof(IsActive)))
+				{
+					OnPropertyChanged(ToggleMessage);
+				}
+			}
+		}
+
+		public string ToggleMessage
+		{
+			get { return _isActive ? "Deactivate" : "Activate"; }
 		}
 
 		private ReceiverType _receiverType;
@@ -73,20 +101,47 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _receiverType, value, nameof(ReceiverType)); }
 		}
 
+		private ObservableCollection<ViewModelBase> _messages;
+
+		public ObservableCollection<ViewModelBase> Messages
+		{
+			get { return _messages ?? (_messages = new ObservableCollection<ViewModelBase>()); }
+			set { SetValue(ref _messages, value, nameof(Messages)); }
+		}
+
+		private bool _broadcast;
+
+		public bool Broadcast
+		{
+			get { return _broadcast; }
+			set { SetValue(ref _broadcast, value, nameof(Broadcast)); }
+		}
+
+		private string _ipAddress;
+
+		public string IpAddress
+		{
+			get { return _ipAddress; }
+			set { SetValue(ref _ipAddress, value, nameof(IpAddress)); }
+		}
+
 		private Subject<Receiver> _whenSaveRequested = new Subject<Receiver>();
 		public IObservable<Receiver> WhenSaveRequested => _whenSaveRequested;
 
 		protected override Task OnActivateAsync(IActivationContext context)
 		{
-			PortNumber = DataItem.PortNumber;
-			ReceiverType = DataItem.ReceiverType;
-			DisplayName = DataItem.DisplayName;
-
 			Title = DisplayName;
 
 			SaveCommand = new ActionCommand(SaveExecute);
-			ActivateCommand = new ActionCommand(ActivateExecute);
+			ToggleCommand = new ActionCommand(ToggleExecute);
+			ClearMessagesCommand = new ActionCommand(ClearMessagesExecute);
+			
 			return Task.CompletedTask;
+		}
+
+		private void ClearMessagesExecute()
+		{
+			Messages.Clear();
 		}
 
 		private void SaveExecute()
@@ -96,12 +151,76 @@ namespace NetworkMonitor.ViewModels.Controls
 			DataItem.PortNumber = PortNumber;
 			DataItem.ReceiverType = ReceiverType;
 			DataItem.DisplayName = DisplayName;
+			DataItem.IpAddress = IpAddress;
+			DataItem.Broadcast = Broadcast;
 
 			_whenSaveRequested.OnNext(DataItem);
 		}
 
-		private void ActivateExecute()
+		private IReceiverClient CreateClient(Receiver receiver)
 		{
+			switch (DataItem.ReceiverType)
+			{
+				case ReceiverType.Tcp:
+					return new TcpReceiverClient(receiver);
+				case ReceiverType.Udp:
+					return new UdpReceiverClient(receiver);
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
+
+		private IReceiverClient _receiverClient;
+		private void ToggleExecute()
+		{
+			if (_receiverClient == null || !IsActive)
+			{
+				if (_receiverClient != null)
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Terminating old client.");
+
+				_receiverClient?.Terminate();
+				AddStatusMessage(NetworkStatusMessageType.Connection, "Creating new client.");
+				_receiverClient = CreateClient(DataItem);
+				_receiverClient.WhenReceived
+					.ObserveOn(Application.Current.Dispatcher)
+					.Subscribe(ClientReceivedMessage);
+
+				AddStatusMessage(NetworkStatusMessageType.Connection, "Starting new client.");
+				if (_receiverClient.Execute())
+				{
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Client running.");
+					IsActive = true;
+				}
+				else
+				{
+					AddStatusMessage(NetworkStatusMessageType.Error, "Client failed to start.");
+				}
+			}
+			else
+			{
+				if (_receiverClient != null)
+					AddStatusMessage(NetworkStatusMessageType.Connection, "Terminating old client.");
+
+				_receiverClient?.Terminate();
+
+				IsActive = false;
+			}
+		}
+
+		private void ClientReceivedMessage(string obj)
+		{
+			var encoding = DataItem.Encoding ?? Encoding.UTF8;
+			AddContentMessage($"Received content ({encoding.BodyName}): \"{obj}\".");
+		}
+
+		private void AddStatusMessage(NetworkStatusMessageType statusType, string message)
+		{
+			Messages.Insert(0, new NetworkStatusMessage(statusType, message));
+		}
+
+		private void AddContentMessage(string message)
+		{
+			Messages.Insert(0, new NetworkContentMessage(message));
 		}
 
 		public override IEnumerable<IBehavior> GetDefaultBehaviors()

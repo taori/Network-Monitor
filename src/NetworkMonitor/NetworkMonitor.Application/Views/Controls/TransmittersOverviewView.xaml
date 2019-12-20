@@ -40,7 +40,7 @@
 							        Command="{Binding ElementName=Self, Path=DataContext.OpenItemCommand}"
 							        CommandParameter="{Binding Path=.}"></Button>
 							<Button Content="Delete" 
-							        Background="{StaticResource ValidationSummaryColor1}"
+							        Foreground="{StaticResource ValidationSummaryColor1}"
 							        Command="{Binding ElementName=Self, Path=DataContext.DeleteItemCommand}"
 							        CommandParameter="{Binding Path=.}"></Button>
 						</StackPanel>

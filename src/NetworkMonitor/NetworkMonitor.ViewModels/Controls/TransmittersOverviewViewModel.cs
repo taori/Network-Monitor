@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Microsoft.Extensions.DependencyInjection;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Integration.ViewMapping;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
@@ -12,16 +13,19 @@ using NetworkMonitor.Framework.Mvvm.Commands;
 using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.Models.Providers;
+using NetworkMonitor.ViewModels.Services;
 using NetworkMonitor.ViewModels.Windows;
 
 namespace NetworkMonitor.ViewModels.Controls
 {
 	public class TransmittersOverviewViewModel : TabViewModel
 	{
+		private IApplicationSettings _applicationSettings;
 		private readonly MainViewModel _mainView;
 		private readonly IDialogService _dialogService;
 		private readonly ITabControllerManager _tabControllerManager;
 		private readonly ITransmitterProvider _transmitterProvider;
+
 
 		public TransmittersOverviewViewModel(MainViewModel mainView, IDialogService dialogService,
 			ITabControllerManager tabControllerManager, ITransmitterProvider transmitterProvider)
@@ -57,7 +61,11 @@ namespace NetworkMonitor.ViewModels.Controls
 					}
 					else
 					{
-						tabController.FocusAt(tabController.Add(itemViewModel));
+						var newIndex = tabController.Add(itemViewModel);
+
+						if (!_applicationSettings.FocusTabOnOpen)
+							return Task.CompletedTask;
+						tabController.FocusAt(newIndex);
 					}
 				}
 			}
@@ -72,14 +80,17 @@ namespace NetworkMonitor.ViewModels.Controls
 			transmitter.DisplayName = "New transmitter";
 			_transmitterProvider.SaveAsync(transmitter);
 
-			var viewModel = new TransmitterViewModel(transmitter);
+			var viewModel = new TransmitterViewModel(transmitter, _dialogService, _mainView);
 			Transmitters.Add(viewModel);
-			OpenItemExecute(viewModel);
+
+			if (_applicationSettings.FocusTabOnCreate)
+				OpenItemExecute(viewModel);
 
 			return Task.CompletedTask;
 		}
 
 		private ICommand _deleteItemCommand;
+
 
 		public ICommand DeleteItemCommand
 		{
@@ -89,6 +100,7 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private ICommand _openItemCommand;
 
+
 		public ICommand OpenItemCommand
 		{
 			get { return _openItemCommand; }
@@ -96,6 +108,7 @@ namespace NetworkMonitor.ViewModels.Controls
 		}
 
 		private ObservableCollection<TransmitterViewModel> _transmitters;
+
 
 		public ObservableCollection<TransmitterViewModel> Transmitters
 		{
@@ -114,6 +127,7 @@ namespace NetworkMonitor.ViewModels.Controls
 		protected override async Task OnActivateAsync(IActivationContext context)
 		{
 			var all = await _transmitterProvider.GetAllAsync();
+			_applicationSettings = context.ServiceProvider.GetRequiredService<IApplicationSettings>();
 			Transmitters = CreateTransmitters(all);
 		}
 
@@ -121,7 +135,7 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			return new ObservableCollection<TransmitterViewModel>(all.Select(d =>
 			{
-				var viewModel = new TransmitterViewModel(d);
+				var viewModel = new TransmitterViewModel(d, _dialogService, _mainView);
 				viewModel.WhenSaveRequested.Subscribe(SaveItem);
 				return viewModel;
 			}));

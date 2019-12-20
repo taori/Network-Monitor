@@ -9,6 +9,7 @@ namespace NetworkMonitor.Framework.Mvvm.Abstraction.UI
 		IObservable<string> WhenTitleChanged { get; }
 		bool Closable { get; }
 		IObservable<bool> WhenClosableChanged { get; }
-		Task<bool> TryCloseTabAsync();
+		IObservable<object> WhenCloseRequested { get; }
+		void CloseTab();
 	}
 }

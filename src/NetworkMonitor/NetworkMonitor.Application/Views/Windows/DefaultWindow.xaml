@@ -8,6 +8,7 @@
         xmlns:common="clr-namespace:NetworkMonitor.ViewModels.Common;assembly=NetworkMonitor.ViewModels"
         xmlns:framework="http://schemas.localcontrols.com/winfx/2006/xaml/presentation"
         xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:commands="clr-namespace:NetworkMonitor.Framework.Mvvm.Commands;assembly=NetworkMonitor.Framework.Mvvm"
         mc:Ignorable="d"
 		x:Name="Self"
         d:DataContext="{d:DesignInstance viewModel:WindowViewModelBase}"
@@ -18,9 +19,31 @@
 		Top="{Binding Path=Top}" Left="{Binding Path=Left}"
 		MinWidth="{Binding Path=MinWidth}" MinHeight="{Binding Path=MinHeight}"
 		MaxWidth="{Binding Path=MaxWidth}" MaxHeight="{Binding Path=MaxHeight}"
-        Height="{Binding Path=Height}" 
+        Height="{Binding Path=Height}"
         Width="{Binding Path=Width}">
+	<mah:MetroWindow.LeftWindowCommands>
+		<mah:WindowCommands ItemsSource="{Binding Path=Content.LeftWindowCommands}">
+			<mah:WindowCommands.ItemTemplate>
+				<DataTemplate>
+					<mah:MetroContentControl Content="{Binding Path=.}"></mah:MetroContentControl>
+				</DataTemplate>
+			</mah:WindowCommands.ItemTemplate>
+		</mah:WindowCommands>
+	</mah:MetroWindow.LeftWindowCommands>
+	<mah:MetroWindow.RightWindowCommands>
+		<mah:WindowCommands ItemsSource="{Binding Path=Content.RightWindowCommands}">
+			<mah:WindowCommands.ItemTemplate>
+				<DataTemplate>
+					<mah:MetroContentControl Content="{Binding Path=.}"></mah:MetroContentControl>
+				</DataTemplate>
+			</mah:WindowCommands.ItemTemplate>
+		</mah:WindowCommands>
+	</mah:MetroWindow.RightWindowCommands>
 	<Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"></RowDefinition>
+			<RowDefinition Height="0"></RowDefinition>
+		</Grid.RowDefinitions>
 		<framework:OverlayPanel IsOverlayVisible="{Binding Path=LoadingState.IsBusy}">
 			<framework:OverlayPanel.Overlay>
 				<TextBlock Text="Loading ..." Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="30"></TextBlock>
