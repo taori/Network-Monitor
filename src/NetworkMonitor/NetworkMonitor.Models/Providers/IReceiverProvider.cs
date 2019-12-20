@@ -10,5 +10,6 @@ namespace NetworkMonitor.Models.Providers
 
 		Task SaveAsync(Receiver item);
 		Task DeleteAsync(Receiver item);
+		Task<Receiver> CopyAsync(Receiver item);
 	}
 }

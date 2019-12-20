@@ -2,10 +2,11 @@ using System;
 using System.Net;
 using System.Text;
 using NetworkMonitor.Models.Enums;
+using Newtonsoft.Json;
 
 namespace NetworkMonitor.Models.Entities
 {
-	public class Transmitter
+	public class Transmitter : ICloneable
 	{
 		public Guid Id { get; set; }
 
@@ -19,7 +20,14 @@ namespace NetworkMonitor.Models.Entities
 
 		public string IpAddress { get; set; }
 
-		public Encoding Encoding { get; set; }
+		[JsonIgnore]
+		public Encoding Encoding
+		{
+			get => Encoding.GetEncoding(EncodingName ?? Encoding.UTF8.WebName);
+			set => EncodingName = value.WebName;
+		}
+
+		public string EncodingName { get; set; }
 
 		public bool IsOperational()
 		{
@@ -30,6 +38,11 @@ namespace NetworkMonitor.Models.Entities
 				return false;
 
 			return true;
+		}
+
+		public object Clone()
+		{
+			return this.MemberwiseClone();
 		}
 	}
 }

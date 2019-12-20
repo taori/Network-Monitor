@@ -53,5 +53,24 @@ namespace NetworkMonitor.Application.Dependencies
 			_settingsStorage.UpdateValue(StorageKey, receivers);
 			_settingsStorage.Save();
 		}
+
+		public async Task<Receiver> CopyAsync(Receiver item)
+		{
+			var all = await GetAllAsync();
+			var index = all.FindIndex(d => d.Id == item.Id);
+			if (index < 0)
+			{
+				throw new Exception($"item with id {item.Id} not found.");
+			}
+
+			var clone = all[index].Clone() as Receiver;
+			clone.Id = Guid.NewGuid();
+			all.Add(clone);
+
+			_settingsStorage.UpdateValue(StorageKey, all);
+			_settingsStorage.Save();
+
+			return clone;
+		}
 	}
 }

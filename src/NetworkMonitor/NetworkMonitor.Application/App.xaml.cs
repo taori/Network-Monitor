@@ -1,4 +1,6 @@
 using System;
+using System.Drawing.Printing;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -177,7 +179,26 @@ namespace NetworkMonitor.Application
 			}
 			finally
 			{
-				Log.Error(exception, message);
+				var sb = new StringBuilder();
+				sb.AppendLine(message);
+				ExpandException(sb, exception);
+				Log.Error(exception, sb.ToString());
+			}
+		}
+
+		private void ExpandException(StringBuilder sb, Exception exception)
+		{
+			if (!string.IsNullOrEmpty(exception.Message))
+				sb.AppendLine(exception.Message);
+			if (!string.IsNullOrEmpty(exception.StackTrace))
+				sb.AppendLine(exception.StackTrace);
+
+			if (exception is AggregateException agg)
+			{
+				foreach (var innerException in agg.InnerExceptions)
+				{
+					ExpandException(sb, innerException);
+				}
 			}
 		}
 	}

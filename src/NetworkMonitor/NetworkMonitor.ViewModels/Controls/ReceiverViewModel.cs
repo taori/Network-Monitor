@@ -16,6 +16,7 @@ using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.Models.Enums;
 using NetworkMonitor.ViewModels.Common;
+using NetworkMonitor.ViewModels.Helpers;
 using NetworkMonitor.ViewModels.Services;
 
 namespace NetworkMonitor.ViewModels.Controls
@@ -33,6 +34,18 @@ namespace NetworkMonitor.ViewModels.Controls
 			ReceiverType = DataItem.ReceiverType;
 			IpAddress = DataItem.IpAddress;
 			Broadcast = DataItem.Broadcast;
+			Encoding = DataItem.Encoding;
+
+			SaveCommand = new ActionCommand(SaveExecute);
+			ToggleCommand = new ActionCommand(ToggleExecute);
+			ClearMessagesCommand = new ActionCommand(ClearMessagesExecute);
+			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
+
+			WhenPropertyChanged.Subscribe(name =>
+			{
+				if (name == nameof(IsActive))
+					OnPropertyChanged(nameof(ToggleMessage));
+			});
 		}
 
 		private int _portNumber;
@@ -80,17 +93,13 @@ namespace NetworkMonitor.ViewModels.Controls
 		public bool IsActive
 		{
 			get { return _isActive; }
-			set {
-				if (SetValue(ref _isActive, value, nameof(IsActive)))
-				{
-					OnPropertyChanged(ToggleMessage);
-				}
-			}
+			set { SetValue(ref _isActive, value, nameof(IsActive)); }
 		}
 
 		public string ToggleMessage
 		{
 			get { return _isActive ? "Deactivate" : "Activate"; }
+			set { }
 		}
 
 		private ReceiverType _receiverType;
@@ -125,16 +134,28 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _ipAddress, value, nameof(IpAddress)); }
 		}
 
+		private Encoding _encoding;
+
+		public Encoding Encoding
+		{
+			get { return _encoding; }
+			set { SetValue(ref _encoding, value, nameof(Encoding)); }
+		}
+
+		private ObservableCollection<SelectorOption<Encoding>> _encodings;
+
+		public ObservableCollection<SelectorOption<Encoding>> Encodings
+		{
+			get { return _encodings ?? (_encodings = new ObservableCollection<SelectorOption<Encoding>>()); }
+			set { SetValue(ref _encodings, value, nameof(Encodings)); }
+		}
+
 		private Subject<Receiver> _whenSaveRequested = new Subject<Receiver>();
 		public IObservable<Receiver> WhenSaveRequested => _whenSaveRequested;
 
 		protected override Task OnActivateAsync(IActivationContext context)
 		{
 			Title = DisplayName;
-
-			SaveCommand = new ActionCommand(SaveExecute);
-			ToggleCommand = new ActionCommand(ToggleExecute);
-			ClearMessagesCommand = new ActionCommand(ClearMessagesExecute);
 			
 			return Task.CompletedTask;
 		}
@@ -153,6 +174,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			DataItem.DisplayName = DisplayName;
 			DataItem.IpAddress = IpAddress;
 			DataItem.Broadcast = Broadcast;
+			DataItem.Encoding = Encoding;
 
 			_whenSaveRequested.OnNext(DataItem);
 		}
@@ -207,10 +229,10 @@ namespace NetworkMonitor.ViewModels.Controls
 			}
 		}
 
-		private void ClientReceivedMessage(string obj)
+		private void ClientReceivedMessage(NetworkContent obj)
 		{
 			var encoding = DataItem.Encoding ?? Encoding.UTF8;
-			AddContentMessage($"Received content ({encoding.BodyName}): \"{obj}\".");
+			AddContentMessage($"Received content ({encoding.BodyName}): \"{obj.Content}\" from \"{obj.Source}\".");
 		}
 
 		private void AddStatusMessage(NetworkStatusMessageType statusType, string message)

@@ -15,6 +15,7 @@ using NetworkMonitor.Framework.Mvvm.Commands;
 using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.ViewModels.Common;
+using NetworkMonitor.ViewModels.Helpers;
 using NetworkMonitor.ViewModels.Services;
 using NetworkMonitor.ViewModels.Windows;
 using TransmitterType = NetworkMonitor.Models.Enums.TransmitterType;
@@ -34,20 +35,29 @@ namespace NetworkMonitor.ViewModels.Controls
 			_mainViewModel = mainViewModel;
 
 			Closable = true;
-			DisplayName = dataItem.DisplayName;
-			PortNumber = dataItem.PortNumber;
-			TransmitterType = dataItem.TransmitterType;
-			Broadcast = dataItem.Broadcast;
-			IpAddress = dataItem.IpAddress;
+			DisplayName = DataItem.DisplayName;
+			PortNumber = DataItem.PortNumber;
+			TransmitterType = DataItem.TransmitterType;
+			Broadcast = DataItem.Broadcast;
+			IpAddress = DataItem.IpAddress;
+			Encoding = DataItem.Encoding;
+
+			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive);
+			ToggleCommand = new ActionCommand(ToggleExecute);
+			NewMessageCommand = new TaskCommand(NewMessageExecute);
+			ClearLogCommand = new ActionCommand(ClearLogExecute);
+			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
+
+			WhenPropertyChanged.Subscribe(name =>
+			{
+				if(name == nameof(IsActive))
+					OnPropertyChanged(nameof(ToggleMessage));
+			});
 		}
 
 		protected override Task OnActivateAsync(IActivationContext context)
 		{
 			Title = DisplayName;
-			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive);
-			ToggleCommand = new ActionCommand(ToggleExecute);
-			NewMessageCommand = new TaskCommand(NewMessageExecute);
-			ClearLogCommand = new ActionCommand(ClearLogExecute);
 			return Task.CompletedTask;
 		}
 
@@ -140,6 +150,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			DataItem.TransmitterType = TransmitterType;
 			DataItem.Broadcast = Broadcast;
 			DataItem.IpAddress = IpAddress;
+			DataItem.Encoding = Encoding;
 
 			Title = DisplayName;
 
@@ -156,6 +167,22 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			get { return _isActive ? "Deactivate" : "Activate"; }
 			set { }
+		}
+
+		private Encoding _encoding;
+
+		public Encoding Encoding
+		{
+			get { return _encoding; }
+			set { SetValue(ref _encoding, value, nameof(Encoding)); }
+		}
+
+		private ObservableCollection<SelectorOption<Encoding>> _encodings;
+
+		public ObservableCollection<SelectorOption<Encoding>> Encodings
+		{
+			get { return _encodings ?? (_encodings = new ObservableCollection<SelectorOption<Encoding>>()); }
+			set { SetValue(ref _encodings, value, nameof(Encodings)); }
 		}
 
 		private Subject<Transmitter> _whenSaveRequested = new Subject<Transmitter>();
@@ -206,13 +233,7 @@ namespace NetworkMonitor.ViewModels.Controls
 		public bool IsActive
 		{
 			get { return _isActive; }
-			set
-			{
-				if (SetValue(ref _isActive, value, nameof(IsActive)))
-				{
-					OnPropertyChanged(ToggleMessage);
-				}
-			}
+			set { SetValue(ref _isActive, value, nameof(IsActive)); }
 		}
 
 		private int _portNumber;

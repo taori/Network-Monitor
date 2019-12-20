@@ -19,6 +19,7 @@
         </Grid.RowDefinitions>
 		<framework:ToolbarPanel Style="{StaticResource DefaultToolbarPanelStyle}">
 			<Button Content="New Receiver" Command="{Binding Path=NewReceiverCommand}"></Button>
+			<Button Content="Toggle all receivers" Command="{Binding Path=ToggleAllCommand}"></Button>
 		</framework:ToolbarPanel>
 		<ListView Grid.Row="1" ItemsSource="{Binding Path=Receivers}">
             <ListView.ItemTemplate>
@@ -36,9 +37,14 @@
 						            helpers:PanelHelper.ChildMargin="0,0,8,0">
                             <Button Content="Open" 
                                     Command="{Binding ElementName=Self, Path=DataContext.OpenItemCommand}"
+                                    CommandParameter="{Binding Path=.}"/>
+                            <Button Content="{Binding Path=ToggleMessage}" 
+                                    Command="{Binding Path=ToggleCommand}"/>
+                            <Button Content="Copy" 
+                                    Command="{Binding ElementName=Self, Path=DataContext.CopyItemCommand}"
                                     CommandParameter="{Binding Path=.}"></Button>
                             <Button Content="Delete" 
-                                    Foreground="{StaticResource ValidationSummaryColor1}"
+                                    Style="{StaticResource DangerButton}"
                                     Command="{Binding ElementName=Self, Path=DataContext.DeleteItemCommand}"
                                     CommandParameter="{Binding Path=.}"></Button>
 						</StackPanel>

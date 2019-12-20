@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +54,22 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _openItemCommand, value, nameof(OpenItemCommand)); }
 		}
 
+		private ICommand _toggleAllCommand;
+
+		public ICommand ToggleAllCommand
+		{
+			get { return _toggleAllCommand; }
+			set { SetValue(ref _toggleAllCommand, value, nameof(ToggleAllCommand)); }
+		}
+
+		private ICommand _copyItemCommand;
+
+		public ICommand CopyItemCommand
+		{
+			get { return _copyItemCommand; }
+			set { SetValue(ref _copyItemCommand, value, nameof(CopyItemCommand)); }
+		}
+
 		private ICommand _deleteItemCommand;
 
 
@@ -75,10 +92,31 @@ namespace NetworkMonitor.ViewModels.Controls
 			NewReceiverCommand = new TaskCommand(NewReceiverExecute);
 			OpenItemCommand = new TaskCommand(OpenItemExecute);
 			DeleteItemCommand = new TaskCommand(DeleteItemExecute);
+			CopyItemCommand = new TaskCommand(CopyItemExecute);
+			ToggleAllCommand = new TaskCommand(ToggleAllExecute);
 
 			var all = await _receiverProvider.GetAllAsync();
 			_applicationSettings = context.ServiceProvider.GetRequiredService<IApplicationSettings>();
 			Receivers = CreateReceivers(all);
+		}
+
+		private Task ToggleAllExecute(object arg)
+		{
+			foreach (var item in Receivers)
+			{
+				item.ToggleCommand?.Execute(null);
+			}
+
+			return Task.CompletedTask;
+		}
+
+		private async Task CopyItemExecute(object arg)
+		{
+			if (arg is ReceiverViewModel viewModel)
+			{
+				var item = await _receiverProvider.CopyAsync(viewModel.DataItem);
+				Receivers.Add(new ReceiverViewModel(item));
+			}
 		}
 
 		private async Task DeleteItemExecute(object arg)
@@ -136,6 +174,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			var receiver = new Receiver();
 			receiver.Id = Guid.NewGuid();
 			receiver.DisplayName = "New receiver";
+			receiver.Encoding = Encoding.UTF8;
 			_receiverProvider.SaveAsync(receiver);
 
 			var viewModel = new ReceiverViewModel(receiver);

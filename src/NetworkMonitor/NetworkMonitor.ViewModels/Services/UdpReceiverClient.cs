@@ -5,6 +5,7 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NetworkMonitor.Framework.Extensions;
 using NetworkMonitor.Models.Entities;
 using NLog;
 
@@ -49,11 +50,17 @@ namespace NetworkMonitor.ViewModels.Services
 
 		private async Task ReceiverLoop()
 		{
-			while (!_tcs.IsCancellationRequested)
+			try
 			{
-				var result = await _udpClient.ReceiveAsync();
-				var encoding = _receiver.Encoding ?? Encoding.UTF8;
-				_whenReceived.OnNext(encoding.GetString(result.Buffer));
+				while (!_tcs.IsCancellationRequested)
+				{
+					var result = await _udpClient.ReceiveAsync().WithCancellation(_tcs.Token);
+					var encoding = _receiver.Encoding ?? Encoding.UTF8;
+					_whenReceived.OnNext(new NetworkContent(encoding.GetString(result.Buffer), result.RemoteEndPoint));
+				}
+			}
+			catch (OperationCanceledException)
+			{
 			}
 		}
 
@@ -67,10 +74,11 @@ namespace NetworkMonitor.ViewModels.Services
 
 		public void Terminate()
 		{
+			_tcs.Cancel(false);
 			_udpClient?.Dispose();
 		}
 
-		private Subject<string> _whenReceived = new Subject<string>();
-		public IObservable<string> WhenReceived => _whenReceived;
+		private Subject<NetworkContent> _whenReceived = new Subject<NetworkContent>();
+		public IObservable<NetworkContent> WhenReceived => _whenReceived;
 	}
 }

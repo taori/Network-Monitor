@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +27,6 @@ namespace NetworkMonitor.ViewModels.Controls
 		private readonly ITabControllerManager _tabControllerManager;
 		private readonly ITransmitterProvider _transmitterProvider;
 
-
 		public TransmittersOverviewViewModel(MainViewModel mainView, IDialogService dialogService,
 			ITabControllerManager tabControllerManager, ITransmitterProvider transmitterProvider)
 		{
@@ -37,6 +37,27 @@ namespace NetworkMonitor.ViewModels.Controls
 			NewTransmitterCommand = new TaskCommand(NewTransmitterExecute);
 			OpenItemCommand = new TaskCommand(OpenItemExecute);
 			DeleteItemCommand = new TaskCommand(DeleteItemExecute);
+			CopyItemCommand = new TaskCommand(CopyItemExecute);
+			ToggleAllCommand = new TaskCommand(ToggleAllExecute);
+		}
+
+		private Task ToggleAllExecute(object arg)
+		{
+			foreach (var item in Transmitters)
+			{
+				item.ToggleCommand?.Execute(null);
+			}
+
+			return Task.CompletedTask;
+		}
+
+		private async Task CopyItemExecute(object arg)
+		{
+			if (arg is TransmitterViewModel viewModel)
+			{
+				var item = await _transmitterProvider.CopyAsync(viewModel.DataItem);
+				Transmitters.Add(new TransmitterViewModel(item, _dialogService, _mainView));
+			}
 		}
 
 		private async Task DeleteItemExecute(object arg)
@@ -78,6 +99,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			var transmitter = new Transmitter();
 			transmitter.Id = Guid.NewGuid();
 			transmitter.DisplayName = "New transmitter";
+			transmitter.Encoding = Encoding.UTF8;
 			_transmitterProvider.SaveAsync(transmitter);
 
 			var viewModel = new TransmitterViewModel(transmitter, _dialogService, _mainView);
@@ -98,6 +120,14 @@ namespace NetworkMonitor.ViewModels.Controls
 			set { SetValue(ref _deleteItemCommand, value, nameof(DeleteItemCommand)); }
 		}
 
+		private ICommand _toggleAllCommand;
+
+		public ICommand ToggleAllCommand
+		{
+			get { return _toggleAllCommand; }
+			set { SetValue(ref _toggleAllCommand, value, nameof(ToggleAllCommand)); }
+		}
+
 		private ICommand _openItemCommand;
 
 
@@ -105,6 +135,14 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			get { return _openItemCommand; }
 			set { SetValue(ref _openItemCommand, value, nameof(OpenItemCommand)); }
+		}
+
+		private ICommand _copyItemCommand;
+
+		public ICommand CopyItemCommand
+		{
+			get { return _copyItemCommand; }
+			set { SetValue(ref _copyItemCommand, value, nameof(CopyItemCommand)); }
 		}
 
 		private ObservableCollection<TransmitterViewModel> _transmitters;

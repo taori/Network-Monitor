@@ -28,20 +28,27 @@
 			<Button Content="Save" Command="{Binding Path=SaveCommand}"/>
 			<Button Content="{Binding Path=ToggleMessage, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" Command="{Binding Path=ToggleCommand}"/>
 			<Button Content="Clear log" Command="{Binding Path=ClearLogCommand}"/>
-			<Button Content="Close" Command="{Binding Path=TabCloseCommand}"/>
+			<framework:ToolbarPanel.RightItems>
+				<Button Content="Close" Style="{StaticResource DangerButton}" Command="{Binding Path=TabCloseCommand}"/>
+			</framework:ToolbarPanel.RightItems>
 		</framework:ToolbarPanel>
 		<framework:ContentPanel Grid.Row="1" Grid.Column="0">
 			<ScrollViewer 
 				VerticalScrollBarVisibility="Auto" 
 				HorizontalScrollBarVisibility="Hidden">
 				<StackPanel
+					IsHitTestVisible="{Binding Path=IsActive, Converter={StaticResource BooleanInversionConverter}}"
 					helpers:PanelHelper.ChildMargin="0,0,0,10" >
 					<TextBox mah:TextBoxHelper.Watermark="Display name:" 
 					         Text="{Binding Path=DisplayName, UpdateSourceTrigger=PropertyChanged}" />
-					<ComboBox ItemsSource="{Binding Source={markup:EnumSource {x:Type enums:TransmitterType}}}" 
+					<ComboBox ItemsSource="{Binding Source={markup:EnumSource {x:Type enums:TransmitterType}}}"
 					          SelectedValuePath="Value"
 					          DisplayMemberPath="Description"
 					          SelectedValue="{Binding Path=TransmitterType, UpdateSourceTrigger=PropertyChanged}"></ComboBox>
+					<ComboBox ItemsSource="{Binding Path=Encodings}" 
+					          SelectedValuePath="Value"
+					          DisplayMemberPath="Description"
+					          SelectedValue="{Binding Path=Encoding}"></ComboBox>
 					<TextBox mah:TextBoxHelper.Watermark="Port number:" 
 					         Text="{Binding Path=PortNumber, UpdateSourceTrigger=PropertyChanged}" />
 					<CheckBox Content="Broadcast" IsChecked="{Binding Path=Broadcast, UpdateSourceTrigger=PropertyChanged}"></CheckBox>

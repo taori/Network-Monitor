@@ -6,6 +6,6 @@ namespace NetworkMonitor.ViewModels.Services
 	{
 		bool Execute();
 		void Terminate();
-		IObservable<string> WhenReceived { get; }
+		IObservable<NetworkContent> WhenReceived { get; }
 	}
 }

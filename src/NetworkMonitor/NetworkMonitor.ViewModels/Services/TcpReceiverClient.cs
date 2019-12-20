@@ -22,8 +22,8 @@ namespace NetworkMonitor.ViewModels.Services
 		{
 		}
 
-		private Subject<string> _whenReceived = new Subject<string>();
+		private Subject<NetworkContent> _whenReceived = new Subject<NetworkContent>();
 
-		public IObservable<string> WhenReceived => _whenReceived;
+		public IObservable<NetworkContent> WhenReceived => _whenReceived;
 	}
 }

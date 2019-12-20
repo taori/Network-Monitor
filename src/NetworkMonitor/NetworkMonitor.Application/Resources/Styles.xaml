@@ -14,6 +14,10 @@
 		<Setter Property="TitleCharacterCasing" Value="Normal" />
 	</Style>
 
+	<Style TargetType="{x:Type Button}" BasedOn="{StaticResource MetroButton}" x:Key="DangerButton">
+		<Setter Property="Foreground" Value="{StaticResource ValidationSummaryColor1}"></Setter>
+	</Style>
+
 	<Style TargetType="{x:Type mah:MetroTabItem}" BasedOn="{StaticResource MetroTabItem}" x:Key="DefaultMetroTabItem">
 		<Setter Property="mah:ControlsHelper.HeaderFontSize" Value="18" />
 	</Style>

@@ -62,11 +62,23 @@
 							BorderBrush="{TemplateBinding BorderBrush}"
 							BorderThickness="{TemplateBinding BorderThickness}"
 					        Padding="{TemplateBinding Padding}" >
-						<StackPanel Orientation="Horizontal" 
-						            IsItemsHost="True"
-						            helpers:PanelHelper.ChildMargin="{TemplateBinding ItemsSpacing}" 
-						            helpers:PanelHelper.SkipLastMargin="True">
-						</StackPanel>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<StackPanel Orientation="Horizontal" 
+							            x:Name="PART_Left"
+							            helpers:PanelHelper.ChildMargin="{TemplateBinding ItemsSpacing}" 
+							            helpers:PanelHelper.SkipLastMargin="True">
+							</StackPanel>
+							<StackPanel Orientation="Horizontal"
+										Grid.Column="1"
+							            x:Name="PART_Right"
+							            helpers:PanelHelper.ChildMargin="{TemplateBinding ItemsSpacing}" 
+							            helpers:PanelHelper.SkipLastMargin="True">
+							</StackPanel>
+						</Grid>
 					</Border>
 				</ControlTemplate>
 			</Setter.Value>
