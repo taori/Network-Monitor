@@ -16,6 +16,11 @@ namespace NetworkMonitor.Framework.Mvvm.Commands
 		public TaskCommand(Func<object, Task> execute) : base(execute)
 		{
 		}
+
+		/// <inheritdoc />
+		public TaskCommand(Func<Task> execute) : base(d => execute())
+		{
+		}
 	}
 
 	public class TaskCommand<TParameter> : ICommand

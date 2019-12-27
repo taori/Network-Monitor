@@ -73,7 +73,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			return Task.CompletedTask;
 		}
 
-		private async Task NewMessageExecute(object parameter)
+		private async Task NewMessageExecute()
 		{
 			if (!IsActive)
 			{
