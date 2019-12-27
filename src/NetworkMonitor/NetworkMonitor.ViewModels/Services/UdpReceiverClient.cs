@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NetworkMonitor.Framework.Extensions;
+using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Models.Entities;
 using NLog;
 
@@ -13,14 +14,18 @@ namespace NetworkMonitor.ViewModels.Services
 {
 	internal class UdpReceiverClient : IReceiverClient
 	{
-		private static readonly ILogger Log = LogManager.GetLogger(nameof(UdpReceiverClient));
+		private readonly CompositionLogger Log = new CompositionLogger();
+		private static readonly ILogger LocalLogger = LogManager.GetLogger(nameof(UdpReceiverClient));
 
 		private readonly Receiver _receiver;
 		private readonly UdpClient _udpClient;
 		private CancellationTokenSource _tcs;
 
-		public UdpReceiverClient(Receiver receiver)
+		public UdpReceiverClient(Receiver receiver, IInteractiveLogger log)
 		{
+			Log.AddLogger(LocalLogger.Wrap());
+			Log.AddLogger(log);
+
 			_receiver = receiver;
 			_udpClient = new UdpClient();
 			_udpClient.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);

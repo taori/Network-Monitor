@@ -2,9 +2,10 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading.Tasks;
+using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Models.Entities;
+using NLog;
 
 namespace NetworkMonitor.ViewModels.Services
 {
@@ -12,15 +13,23 @@ namespace NetworkMonitor.ViewModels.Services
 	{
 		private readonly Transmitter _transmitter;
 
-		public UdpTransmissionClient(Transmitter transmitter)
+		private readonly CompositionLogger Log = new CompositionLogger();
+		private static readonly ILogger LocalLogger = LogManager.GetLogger(nameof(UdpTransmissionClient));
+
+		public UdpTransmissionClient(Transmitter transmitter, IInteractiveLogger log)
 		{
+			Log.AddLogger(LocalLogger.Wrap());
+			Log.AddLogger(log);
+
 			_transmitter = transmitter;
 			_client = new UdpClient();
 		}
 
-		private Subject<string> _whenReceived = new Subject<string>();
 		private UdpClient _client;
+
+		private Subject<string> _whenReceived = new Subject<string>();
 		public IObservable<string> WhenReceived => _whenReceived;
+
 		public async Task<int> SendAsync(byte[] bytes)
 		{
 			var endPoint = GetEndpoint();

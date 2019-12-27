@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
+using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
 using NetworkMonitor.Framework.Mvvm.Abstraction.UI;
@@ -42,14 +43,19 @@ namespace NetworkMonitor.ViewModels.Controls
 			IpAddress = DataItem.IpAddress;
 			Encoding = DataItem.Encoding;
 
-			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive);
-			ToggleCommand = new ActionCommand(ToggleExecute);
+			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive && CanSave);
+			ToggleCommand = new TaskCommand(ToggleExecute, d => CanToggle);
 			NewMessageCommand = new TaskCommand(NewMessageExecute);
-			ClearLogCommand = new ActionCommand(ClearLogExecute);
+			ClearLogCommand = new TaskCommand(ClearLogExecute, d => Messages.Count > 0);
 			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
+
+			CanToggle = true;
 
 			WhenPropertyChanged.Subscribe(name =>
 			{
+				CanSave = true;
+				CanToggle = false;
+
 				if(name == nameof(IsActive))
 					OnPropertyChanged(nameof(ToggleMessage));
 			});
@@ -61,9 +67,10 @@ namespace NetworkMonitor.ViewModels.Controls
 			return Task.CompletedTask;
 		}
 
-		private void ClearLogExecute()
+		private Task ClearLogExecute(object parameter)
 		{
 			Messages.Clear();
+			return Task.CompletedTask;
 		}
 
 		private async Task NewMessageExecute(object parameter)
@@ -74,16 +81,22 @@ namespace NetworkMonitor.ViewModels.Controls
 					"The client is not running yet. Do you want to start it?"))
 					return;
 
-				ToggleExecute();
+				await ToggleExecute(null);
 			}
 
 			var encoding = DataItem.Encoding ?? Encoding.UTF8;
 			var bytes = encoding.GetBytes(NewMessage);
 
-			AddContentMessage($"Sending message \"{NewMessage}\" using encoding {encoding.BodyName}.");
 			var bytesSent = await _transmissionClient.SendAsync(bytes);
 			if (bytesSent == bytes.Length)
-				AddStatusMessage(NetworkStatusMessageType.Information, "Transmission successful.");
+			{
+				AddContentMessage($"Message \"{NewMessage}\" using encoding {encoding.BodyName} sent.");
+			}
+			else
+			{
+				AddStatusMessage( NetworkStatusMessageType.Error, $"Sending message \"{NewMessage}\" using encoding {encoding.BodyName} failed.");
+			}
+				
 			NewMessage = string.Empty;
 		}
 
@@ -92,16 +105,36 @@ namespace NetworkMonitor.ViewModels.Controls
 			switch (DataItem.TransmitterType)
 			{
 				case TransmitterType.Tcp:
-					return new TcpTransmissionClient(transmitter);
+					return new TcpTransmissionClient(transmitter, new DelegateLogger(DisplayInformation, DisplayWarning, DisplayError, DisplayFatal));
 				case TransmitterType.Udp:
-					return new UdpTransmissionClient(transmitter);
+					return new UdpTransmissionClient(transmitter, new DelegateLogger(DisplayInformation, DisplayWarning, DisplayError, DisplayFatal));
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 		}
 
+		private void DisplayFatal(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Error, obj);
+		}
+
+		private void DisplayError(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Error, obj);
+		}
+
+		private void DisplayWarning(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Information, obj);
+		}
+
+		private void DisplayInformation(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Information, obj);
+		}
+
 		private ITransmissionClient _transmissionClient;
-		private void ToggleExecute()
+		private Task ToggleExecute(object parameter)
 		{
 			if (_transmissionClient == null || !IsActive)
 			{
@@ -131,6 +164,8 @@ namespace NetworkMonitor.ViewModels.Controls
 
 				IsActive = false;
 			}
+
+			return Task.CompletedTask;
 		}
 
 		private void AddStatusMessage(NetworkStatusMessageType statusType, string message)
@@ -156,6 +191,8 @@ namespace NetworkMonitor.ViewModels.Controls
 
 			_whenSaveRequested.OnNext(DataItem);
 
+			CanToggle = true;
+
 			return Task.CompletedTask;
 		}
 
@@ -163,6 +200,23 @@ namespace NetworkMonitor.ViewModels.Controls
 		{
 			yield break;
 		}
+
+		private bool _canToggle;
+
+		public bool CanToggle
+		{
+			get => _canToggle;
+			set => SetValue(ref _canToggle, value, nameof(CanToggle));
+		}
+
+		private bool _canSave;
+
+		public bool CanSave
+		{
+			get => _canSave;
+			set => SetValue(ref _canSave, value, nameof(CanSave));
+		}
+
 		public string ToggleMessage
 		{
 			get { return _isActive ? "Deactivate" : "Activate"; }

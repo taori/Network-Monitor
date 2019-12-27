@@ -9,9 +9,11 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework;
+using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity;
 using NetworkMonitor.Framework.Mvvm.Abstraction.Interactivity.ViewModelBehaviors;
 using NetworkMonitor.Framework.Mvvm.Abstraction.UI;
+using NetworkMonitor.Framework.Mvvm.Commands;
 using NetworkMonitor.Framework.Mvvm.ViewModel;
 using NetworkMonitor.Models.Entities;
 using NetworkMonitor.Models.Enums;
@@ -36,16 +38,37 @@ namespace NetworkMonitor.ViewModels.Controls
 			Broadcast = DataItem.Broadcast;
 			Encoding = DataItem.Encoding;
 
-			SaveCommand = new ActionCommand(SaveExecute);
-			ToggleCommand = new ActionCommand(ToggleExecute);
-			ClearMessagesCommand = new ActionCommand(ClearMessagesExecute);
+			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive && CanSave);
+			ToggleCommand = new TaskCommand(ToggleExecute, d => CanToggle);
+			ClearMessagesCommand = new TaskCommand(ClearMessagesExecute, d => Messages.Count > 0);
 			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
+
+			CanToggle = true;
 
 			WhenPropertyChanged.Subscribe(name =>
 			{
+				CanSave = true;
+				CanToggle = false;
+
 				if (name == nameof(IsActive))
 					OnPropertyChanged(nameof(ToggleMessage));
 			});
+		}
+
+		private bool _canToggle;
+
+		public bool CanToggle
+		{
+			get => _canToggle;
+			set => SetValue(ref _canToggle, value, nameof(CanToggle));
+		}
+
+		private bool _canSave;
+
+		public bool CanSave
+		{
+			get => _canSave;
+			set => SetValue(ref _canSave, value, nameof(CanSave));
 		}
 
 		private int _portNumber;
@@ -160,12 +183,13 @@ namespace NetworkMonitor.ViewModels.Controls
 			return Task.CompletedTask;
 		}
 
-		private void ClearMessagesExecute()
+		private Task ClearMessagesExecute(object parameter)
 		{
 			Messages.Clear();
+			return Task.CompletedTask;
 		}
 
-		private void SaveExecute()
+		private Task SaveExecute(object parameter)
 		{
 			Title = DisplayName;
 
@@ -177,6 +201,10 @@ namespace NetworkMonitor.ViewModels.Controls
 			DataItem.Encoding = Encoding;
 
 			_whenSaveRequested.OnNext(DataItem);
+
+			CanToggle = true;
+
+			return Task.CompletedTask;
 		}
 
 		private IReceiverClient CreateClient(Receiver receiver)
@@ -184,16 +212,36 @@ namespace NetworkMonitor.ViewModels.Controls
 			switch (DataItem.ReceiverType)
 			{
 				case ReceiverType.Tcp:
-					return new TcpReceiverClient(receiver);
+					return new TcpReceiverClient(receiver, new DelegateLogger(DisplayInformation, DisplayWarning, DisplayError, DisplayFatal));
 				case ReceiverType.Udp:
-					return new UdpReceiverClient(receiver);
+					return new UdpReceiverClient(receiver, new DelegateLogger(DisplayInformation, DisplayWarning, DisplayError, DisplayFatal));
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
 		}
 
+		private void DisplayFatal(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Error, obj);
+		}
+
+		private void DisplayError(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Error, obj);
+		}
+
+		private void DisplayWarning(string obj)
+		{
+			AddStatusMessage(NetworkStatusMessageType.Information, obj);
+		}
+
+		private void DisplayInformation(string obj)
+		{
+			AddContentMessage(obj);
+		}
+
 		private IReceiverClient _receiverClient;
-		private void ToggleExecute()
+		private Task ToggleExecute(object parameter)
 		{
 			if (_receiverClient == null || !IsActive)
 			{
@@ -227,6 +275,8 @@ namespace NetworkMonitor.ViewModels.Controls
 
 				IsActive = false;
 			}
+
+			return Task.CompletedTask;
 		}
 
 		private void ClientReceivedMessage(NetworkContent obj)

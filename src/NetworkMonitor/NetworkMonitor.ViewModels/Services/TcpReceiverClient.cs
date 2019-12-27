@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NetworkMonitor.Framework.Extensions;
+using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Models.Entities;
 using NLog;
 
@@ -22,7 +23,7 @@ namespace NetworkMonitor.ViewModels.Services
 		private PipeReader _reader;
 		private PipeWriter _writer;
 
-		public PipeAdapter(Stream stream) : this(stream, new StreamPipeReaderOptions(), new StreamPipeWriterOptions())
+		public PipeAdapter(Stream stream) : this(stream, new StreamPipeReaderOptions(leaveOpen: true), new StreamPipeWriterOptions(leaveOpen: true))
 		{
 		}
 
@@ -57,22 +58,26 @@ namespace NetworkMonitor.ViewModels.Services
 		{
 			_reader.Complete();
 			_writer.Complete();
-			_stream?.Dispose(); 
+			_stream?.Dispose();
 			_stream = null;
 		}
 	}
 
 	internal class TcpReceiverClient : IReceiverClient
 	{
-		private static readonly ILogger Log = LogManager.GetLogger(nameof(TcpReceiverClient));
+		private readonly CompositionLogger Log = new CompositionLogger();
+		private static readonly ILogger LocalLogger = LogManager.GetLogger(nameof(TcpReceiverClient));
 
 		private readonly Receiver _receiver;
 		private TcpListener _tcpClient;
 		private CancellationTokenSource _cts;
 		private readonly List<PipeAdapter> _adapters = new List<PipeAdapter>();
 
-		public TcpReceiverClient(Receiver receiver)
+		public TcpReceiverClient(Receiver receiver, IInteractiveLogger log)
 		{
+			Log.AddLogger(LocalLogger.Wrap());
+			Log.AddLogger(log);
+
 			_receiver = receiver;
 		}
 
@@ -82,6 +87,8 @@ namespace NetworkMonitor.ViewModels.Services
 			{
 				_cts = new CancellationTokenSource();
 				_tcpClient = new TcpListener(CreateEndpoint());
+				_tcpClient.Start(120);
+
 				Task.Run(ClientAcceptorLoop);
 				return true;
 			}
