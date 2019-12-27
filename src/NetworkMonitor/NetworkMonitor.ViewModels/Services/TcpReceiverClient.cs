@@ -44,6 +44,9 @@ namespace NetworkMonitor.ViewModels.Services
 			while (!cancellationToken.IsCancellationRequested)
 			{
 				var result = await _reader.ReadAsync(cancellationToken);
+				if (result.IsCanceled || result.IsCompleted)
+					return;
+
 				var buffer = result.Buffer;
 				buffer.Slice(new SequencePosition(), buffer.Length);
 			}

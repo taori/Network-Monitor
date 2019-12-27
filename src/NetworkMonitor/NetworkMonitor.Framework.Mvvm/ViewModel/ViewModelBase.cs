@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reactive.Subjects;
+using System.Windows.Input;
 using JetBrains.Annotations;
 
 namespace NetworkMonitor.Framework.Mvvm.ViewModel
@@ -28,6 +29,7 @@ namespace NetworkMonitor.Framework.Mvvm.ViewModel
 			field = value;
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 			_whenPropertyChanged.OnNext(propertyName);
+
 			return true;
 		}
 

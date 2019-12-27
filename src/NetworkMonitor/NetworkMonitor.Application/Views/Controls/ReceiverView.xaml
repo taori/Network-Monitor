@@ -38,15 +38,15 @@
 				IsHitTestVisible="{Binding Path=IsActive, Converter={StaticResource BooleanInversionConverter}}"
 				helpers:PanelHelper.ChildMargin="0,0,0,10" >
 				<TextBox mah:TextBoxHelper.Watermark="Display name:" 
-				         Text="{Binding Path=DisplayName}" />
+				         Text="{Binding Path=DisplayName, UpdateSourceTrigger=PropertyChanged}" />
 				<ComboBox ItemsSource="{Binding Source={markup:EnumSource {x:Type enums:ReceiverType}}}" 
 						  SelectedValuePath="Value"
 						  DisplayMemberPath="Description"
-				          SelectedValue="{Binding Path=ReceiverType}"></ComboBox>
+				          SelectedValue="{Binding Path=ReceiverType, UpdateSourceTrigger=PropertyChanged}"></ComboBox>
 				<ComboBox ItemsSource="{Binding Path=Encodings}" 
 				          SelectedValuePath="Value"
 				          DisplayMemberPath="Description"
-				          SelectedValue="{Binding Path=Encoding}"></ComboBox>
+				          SelectedValue="{Binding Path=Encoding, UpdateSourceTrigger=PropertyChanged}"></ComboBox>
 				<TextBox mah:TextBoxHelper.Watermark="Port number:" 
 				         Text="{Binding Path=PortNumber, UpdateSourceTrigger=PropertyChanged}" />
 				<CheckBox Content="Broadcast" IsChecked="{Binding Path=Broadcast, UpdateSourceTrigger=PropertyChanged}"></CheckBox>

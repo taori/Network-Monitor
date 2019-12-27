@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
@@ -47,8 +48,11 @@ namespace NetworkMonitor.ViewModels.Controls
 
 			WhenPropertyChanged.Subscribe(name =>
 			{
-				CanSave = true;
-				CanToggle = false;
+				if (!new[] { nameof(CanSave), nameof(CanToggle), nameof(Title), nameof(IsActive) }.Contains(name))
+				{
+					CanSave = true;
+					CanToggle = false;
+				}
 
 				if (name == nameof(IsActive))
 					OnPropertyChanged(nameof(ToggleMessage));
@@ -203,6 +207,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			_whenSaveRequested.OnNext(DataItem);
 
 			CanToggle = true;
+			CanSave = false;
 
 			return Task.CompletedTask;
 		}
