@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using Microsoft.Xaml.Behaviors.Core;
 using NetworkMonitor.Framework;
 using NetworkMonitor.Framework.Logging;
@@ -40,33 +41,22 @@ namespace NetworkMonitor.ViewModels.Controls
 			Encoding = DataItem.Encoding;
 
 			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive && CanSave);
-			ToggleCommand = new TaskCommand(ToggleExecute, d => CanToggle);
+			ToggleCommand = new TaskCommand(ToggleExecute, d => !CanSave || IsActive);
 			ClearMessagesCommand = new TaskCommand(ClearMessagesExecute, d => Messages.Count > 0);
 			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
-
-			CanToggle = true;
-
+			
 			WhenPropertyChanged.Subscribe(name =>
 			{
-				if (!new[] { nameof(CanSave), nameof(CanToggle), nameof(Title), nameof(IsActive) }.Contains(name))
+				if (!new[] { nameof(DisplayName), nameof(PortNumber), nameof(ReceiverType), nameof(IpAddress), nameof(Broadcast), nameof(Encoding) }.Contains(name))
 				{
 					CanSave = true;
-					CanToggle = false;
 				}
 
 				if (name == nameof(IsActive))
 					OnPropertyChanged(nameof(ToggleMessage));
 			});
 		}
-
-		private bool _canToggle;
-
-		public bool CanToggle
-		{
-			get => _canToggle;
-			set => SetValue(ref _canToggle, value, nameof(CanToggle));
-		}
-
+		
 		private bool _canSave;
 
 		public bool CanSave
@@ -206,7 +196,6 @@ namespace NetworkMonitor.ViewModels.Controls
 
 			_whenSaveRequested.OnNext(DataItem);
 
-			CanToggle = true;
 			CanSave = false;
 
 			return Task.CompletedTask;
@@ -292,12 +281,12 @@ namespace NetworkMonitor.ViewModels.Controls
 
 		private void AddStatusMessage(NetworkStatusMessageType statusType, string message)
 		{
-			Messages.Insert(0, new NetworkStatusMessage(statusType, message));
+			Application.Current.Dispatcher.InvokeAsync(() => Messages.Insert(0, new NetworkStatusMessage(statusType, message)));
 		}
 
 		private void AddContentMessage(string message)
 		{
-			Messages.Insert(0, new NetworkContentMessage(message));
+			Application.Current.Dispatcher.InvokeAsync(() => Messages.Insert(0, new NetworkContentMessage(message)));
 		}
 
 		public override IEnumerable<IBehavior> GetDefaultBehaviors()

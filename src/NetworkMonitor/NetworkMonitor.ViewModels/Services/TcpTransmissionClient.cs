@@ -58,10 +58,10 @@ namespace NetworkMonitor.ViewModels.Services
 			_tcpClient = null;
 		}
 
-		public Task<int> SendAsync(byte[] bytes)
+		public async Task<int> SendAsync(byte[] bytes)
 		{
-			_adapter.Write(bytes);
-			return Task.FromResult(bytes.Length);
+			await _adapter.WriteAsync(bytes);
+			return bytes.Length;
 		}
 	}
 }

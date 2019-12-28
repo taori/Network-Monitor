@@ -45,19 +45,16 @@ namespace NetworkMonitor.ViewModels.Controls
 			Encoding = DataItem.Encoding;
 
 			SaveCommand = new TaskCommand(SaveExecute, d => !IsActive && CanSave);
-			ToggleCommand = new TaskCommand(ToggleExecute, d => CanToggle);
+			ToggleCommand = new TaskCommand(ToggleExecute, d => !CanSave || IsActive);
 			NewMessageCommand = new TaskCommand(NewMessageExecute);
 			ClearLogCommand = new TaskCommand(ClearLogExecute, d => Messages.Count > 0);
 			Encodings = new ObservableCollection<SelectorOption<Encoding>>(EncodingOptionsFactory.GetAll());
 
-			CanToggle = true;
-			
 			WhenPropertyChanged.Subscribe(name =>
 			{
-				if (!new[] { nameof(CanSave), nameof(CanToggle), nameof(Title), nameof(IsActive), nameof(Messages) }.Contains(name))
+				if (new[] { nameof(DisplayName), nameof(PortNumber), nameof(TransmitterType), nameof(Broadcast), nameof(IpAddress), nameof(Encoding) }.Contains(name))
 				{
 					CanSave = true;
-					CanToggle = false;
 				}
 
 				if(name == nameof(IsActive))
@@ -195,7 +192,6 @@ namespace NetworkMonitor.ViewModels.Controls
 
 			_whenSaveRequested.OnNext(DataItem);
 
-			CanToggle = true;
 			CanSave = false;
 
 			return Task.CompletedTask;
@@ -204,14 +200,6 @@ namespace NetworkMonitor.ViewModels.Controls
 		public override IEnumerable<IBehavior> GetDefaultBehaviors()
 		{
 			yield break;
-		}
-
-		private bool _canToggle;
-
-		public bool CanToggle
-		{
-			get => _canToggle;
-			set => SetValue(ref _canToggle, value, nameof(CanToggle));
 		}
 
 		private bool _canSave;

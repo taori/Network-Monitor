@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
@@ -17,55 +16,6 @@ using NLog;
 
 namespace NetworkMonitor.ViewModels.Services
 {
-	public class PipeAdapter
-	{
-		private Stream _stream;
-		private PipeReader _reader;
-		private PipeWriter _writer;
-
-		public PipeAdapter(Stream stream) : this(stream, new StreamPipeReaderOptions(leaveOpen: true), new StreamPipeWriterOptions(leaveOpen: true))
-		{
-		}
-
-		public PipeAdapter(Stream stream, StreamPipeReaderOptions readerOptions, StreamPipeWriterOptions writerOptions)
-		{
-			_stream = stream;
-			_reader = PipeReader.Create(_stream, readerOptions);
-			_writer = PipeWriter.Create(_stream, writerOptions);
-		}
-
-		public async Task ExecuteAsync(CancellationToken cancellationToken)
-		{
-			await FillReader(cancellationToken);
-		}
-
-		private async Task FillReader(CancellationToken cancellationToken)
-		{
-			while (!cancellationToken.IsCancellationRequested)
-			{
-				var result = await _reader.ReadAsync(cancellationToken);
-				if (result.IsCanceled || result.IsCompleted)
-					return;
-
-				var buffer = result.Buffer;
-				buffer.Slice(new SequencePosition(), buffer.Length);
-			}
-		}
-
-		public void Write(ReadOnlySpan<byte> value)
-		{
-			_writer.Write(value);
-		}
-
-		public void Dispose()
-		{
-			_reader.Complete();
-			_writer.Complete();
-			_stream?.Dispose();
-			_stream = null;
-		}
-	}
-
 	internal class TcpReceiverClient : IReceiverClient
 	{
 		private readonly CompositionLogger Log = new CompositionLogger();
@@ -116,7 +66,27 @@ namespace NetworkMonitor.ViewModels.Services
 		{
 			var adapter = new PipeAdapter(client.GetStream());
 			Task.Run(() => adapter.ExecuteAsync(_cts.Token));
+
+			adapter.WhenReceived
+				.Select(d => new NetworkContent(_receiver.Encoding.GetString(d.ToArray()), client.Client.RemoteEndPoint))
+				.Subscribe(SequenceReceived);
+
+			adapter.WhenTerminated
+				.Select(d => (adapter, client.Client.RemoteEndPoint))
+				.Subscribe(Disconnect);
+
 			return adapter;
+		}
+
+		private void Disconnect((PipeAdapter adapter, EndPoint endPoint) tuple)
+		{
+			Log.Information($"Client {tuple.endPoint} disconnected.");
+			_adapters.Remove(tuple.adapter);
+		}
+
+		private void SequenceReceived(NetworkContent content)
+		{
+			_whenReceived.OnNext(content);
 		}
 
 		private IPEndPoint CreateEndpoint()
