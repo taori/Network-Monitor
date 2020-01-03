@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using NetworkMonitor.Framework.Logging;
 using NetworkMonitor.Models.Entities;
@@ -60,7 +61,7 @@ namespace NetworkMonitor.ViewModels.Services
 
 		public async Task<int> SendAsync(byte[] bytes)
 		{
-			await _adapter.WriteAsync(bytes);
+			await _adapter.WriteAsync(bytes, CancellationToken.None).ConfigureAwait(false);
 			return bytes.Length;
 		}
 	}

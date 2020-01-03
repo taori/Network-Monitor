@@ -33,7 +33,7 @@ namespace NetworkMonitor.ViewModels.Services
 
 		public async Task ExecuteAsync(CancellationToken cancellationToken)
 		{
-			await FillReader(cancellationToken);
+			await FillReader(cancellationToken).ConfigureAwait(false);
 			_whenTerminated.OnNext(this);
 		}
 
@@ -41,7 +41,7 @@ namespace NetworkMonitor.ViewModels.Services
 		{
 			while (!cancellationToken.IsCancellationRequested)
 			{
-				var result = await _reader.ReadAsync(cancellationToken);
+				var result = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
 				if (result.IsCanceled || result.IsCompleted)
 					return;
 
@@ -50,9 +50,17 @@ namespace NetworkMonitor.ViewModels.Services
 			}
 		}
 
-		public async Task WriteAsync(ReadOnlyMemory<byte> value)
+		public async Task FlushAsync(CancellationToken cancellationToken)
 		{
-			await _writer.WriteAsync(value);
+			await _writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+		}
+
+		public async Task WriteAsync(ReadOnlyMemory<byte> value, CancellationToken cancellationToken, bool autoFlush = true)
+		{
+			await _writer.WriteAsync(value, cancellationToken).ConfigureAwait(false);
+
+			if (autoFlush)
+				await _writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 		}
 
 		public void Dispose()

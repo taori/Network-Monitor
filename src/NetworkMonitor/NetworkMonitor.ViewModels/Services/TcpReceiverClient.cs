@@ -54,11 +54,24 @@ namespace NetworkMonitor.ViewModels.Services
 
 		private async Task ClientAcceptorLoop()
 		{
-			while (!_cts.IsCancellationRequested)
+			try
 			{
-				var client = await _tcpClient.AcceptTcpClientAsync().WithCancellation(_cts.Token);
-				var adapter = CreatePipeAdapter(client);
-				_adapters.Add(adapter);
+				while (!_cts.IsCancellationRequested)
+				{
+					Log.Trace("Waiting for client to connect.");
+					var client = await _tcpClient.AcceptTcpClientAsync().WithCancellation(_cts.Token);
+					Log.Information($"Client connected @{client.Client.RemoteEndPoint}.");
+					var adapter = CreatePipeAdapter(client);
+					_adapters.Add(adapter);
+				}
+			}
+			catch (OperationCanceledException e)
+			{
+				Log.Trace(e.ToString());
+			}
+			catch (Exception e)
+			{
+				Log.Error(e);
 			}
 		}
 

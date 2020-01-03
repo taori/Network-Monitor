@@ -47,7 +47,7 @@ namespace NetworkMonitor.ViewModels.Controls
 			
 			WhenPropertyChanged.Subscribe(name =>
 			{
-				if (!new[] { nameof(DisplayName), nameof(PortNumber), nameof(ReceiverType), nameof(IpAddress), nameof(Broadcast), nameof(Encoding) }.Contains(name))
+				if (new[] { nameof(DisplayName), nameof(PortNumber), nameof(ReceiverType), nameof(IpAddress), nameof(Broadcast), nameof(Encoding) }.Contains(name))
 				{
 					CanSave = true;
 				}
